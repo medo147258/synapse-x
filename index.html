@@ -896,6 +896,7 @@
         let detectedPattern = '';
 
         const WEB3FORMS_KEY = '62d79786-1ef2-405e-a7d0-0246e81dd0c2';
+        const KIT_FORM_UID = '31e29ef833';
 
         // ==================== PATTERNS DATABASE ====================
         const patterns = {
@@ -1074,7 +1075,8 @@
                 document.getElementById('op-id-display-7').textContent = 'OP-ID: ' + (operatorId || 'PENDING');
                 document.getElementById('monitor-habit').textContent = rootHabit;
                 if (rootHabit) {
-                    document.getElementById('personal-echo').textContent = 'تم رصد محاولة هروب مرتبطة بـ [' + rootHabit + ']';
+                    document.getElementById('personal-echo').textContent = 'تم رصد محاولة هروب مرتبطة بـ [' + rootHabit +
+                        ']';
                 }
                 localStorage.setItem('synapseX_monitoring_start', new Date().toISOString());
                 startSystemFeed();
@@ -1262,7 +1264,7 @@
             if (checkbox.checked) triggerHaptic('light');
         }
 
-        // ==================== EMAIL + WEB3FORMS ====================
+        // ==================== EMAIL + WEB3FORMS + KIT ====================
         function validateAndUnlock() {
             const emailInput = document.getElementById('operator-email');
             const email = emailInput.value.trim();
@@ -1281,6 +1283,8 @@
 
                 localStorage.setItem('synapseX_operator_email', operatorEmail);
                 localStorage.setItem('synapseX_operator_id', operatorId);
+                // Mark as completed to prevent retaking
+                localStorage.setItem('synapseX_test_completed', 'true');
 
                 document.getElementById('op-id-display').textContent = 'OP-ID: ' + operatorId;
 
@@ -1289,7 +1293,10 @@
                 emailInput.disabled = true;
                 triggerHaptic('light');
 
+                // Send to Web3Forms (your report)
                 sendToWeb3Forms(email, missionCompleted ? 'COMPLETED' : 'PENDING');
+                // Subscribe to Kit
+                subscribeToKit(email);
 
                 setTimeout(() => {
                     document.getElementById('email-gate').style.display = 'none';
@@ -1344,6 +1351,20 @@ END OF REPORT
                 });
             } catch (error) {
                 console.error('Web3Forms error:', error);
+            }
+        }
+
+        async function subscribeToKit(email) {
+            try {
+                const res = await fetch(`https://api.convertkit.com/v3/forms/${KIT_FORM_UID}/subscribe`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email, api_key: '' })
+                });
+                const data = await res.json();
+                console.log('Kit subscription:', data);
+            } catch (e) {
+                console.error('Kit error:', e);
             }
         }
 
@@ -1458,6 +1479,31 @@ END OF REPORT
         // ==================== INIT ====================
         window.onload = function() {
             checkReturnDetection();
+
+            // Check if user already completed the test
+            const hasCompleted = localStorage.getItem('synapseX_test_completed');
+            if (hasCompleted === 'true') {
+                // Redirect to monitoring screen with saved data
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                document.getElementById('screen7').classList.add('active');
+
+                const savedEmail = localStorage.getItem('synapseX_operator_email');
+                const savedId = localStorage.getItem('synapseX_operator_id');
+                const savedHabit = localStorage.getItem('synapseX_root_habit');
+
+                if (savedEmail) operatorEmail = savedEmail;
+                if (savedId) operatorId = savedId;
+                if (savedHabit) rootHabit = savedHabit;
+
+                document.getElementById('op-id-display-7').textContent = 'OP-ID: ' + (operatorId || 'PENDING');
+                document.getElementById('monitor-habit').textContent = rootHabit;
+                if (rootHabit) {
+                    document.getElementById('personal-echo').textContent = 'تم رصد محاولة هروب مرتبطة بـ [' +
+                        rootHabit + ']';
+                }
+                startSystemFeed();
+                return;
+            }
 
             const savedEmail = localStorage.getItem('synapseX_operator_email');
             const savedId = localStorage.getItem('synapseX_operator_id');

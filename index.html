@@ -743,10 +743,10 @@
 
                 <div id="commitment-gate" style="margin-top: 25px; text-align: right;">
                     <p style="color: var(--accent-amber); font-size: 0.9rem;">لتلقي التقرير الكامل وبروتوكولات التدخل:</p>
-                    <div class="checklist-item" onclick="toggleCheck(this)">
-                        <input type="checkbox" id="commit-check">
-                        <label for="commit-check" style="cursor: pointer; font-size: 0.9rem;">أؤكد أنني مستعد لاستلام البروتوكول.</label>
-                    </div>
+                   <div class="checklist-item">
+    <input type="checkbox" id="commit-check" onchange="toggleEmailGate()">
+    <label for="commit-check" style="cursor: pointer; font-size: 0.9rem; user-select: none;" onclick="triggerHaptic('light')">أؤكد أنني مستعد لاستلام البروتوكول.</label>
+</div>
                 </div>
 
                 <div id="email-gate" style="margin-top: 25px; display: none;">
@@ -1257,12 +1257,12 @@
         }
 
         // ==================== COMMITMENT CHECK ====================
-        function toggleCheck(element) {
-            const checkbox = element.querySelector('input[type="checkbox"]');
-            checkbox.checked = !checkbox.checked;
+           function toggleEmailGate() {
+        const checkbox = document.getElementById('commit-check');
+        if (checkbox) {
             document.getElementById('email-gate').style.display = checkbox.checked ? 'block' : 'none';
-            if (checkbox.checked) triggerHaptic('light');
         }
+    }
 
         // ==================== EMAIL + WEB3FORMS + KIT ====================
         function validateAndUnlock() {

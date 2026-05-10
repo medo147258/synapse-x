@@ -1354,18 +1354,21 @@ END OF REPORT
             }
         }
 
-        async function subscribeToKit(email) {
-            try {
-                const res = await fetch(`https://api.convertkit.com/v3/forms/${KIT_FORM_UID}/subscribe`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: email, api_key: '' })
-                });
-                const data = await res.json();
-                console.log('Kit subscription:', data);
-            } catch (e) {
-                console.error('Kit error:', e);
-            }
+                function subscribeToKit(email) {
+            var form = document.createElement('form');
+            form.action = 'https://app.convertkit.com/forms/' + KIT_FORM_UID + '/subscriptions';
+            form.method = 'POST';
+            form.style.display = 'none';
+
+            var emailInput = document.createElement('input');
+            emailInput.type = 'email';
+            emailInput.name = 'email_address';
+            emailInput.value = email;
+            form.appendChild(emailInput);
+
+            document.body.appendChild(form);
+            form.submit();
+        }
         }
 
         document.addEventListener('keydown', function(e) {

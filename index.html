@@ -872,6 +872,9 @@
 
                 <button class="btn btn-gold" onclick="shareResult()" style="margin-top: 20px;">SHARE YOUR RESULT</button>
 
+                <button class="btn btn-gold" id="btn-request-protocol" onclick="requestNextProtocol()" style="margin-top: 20px; display: none;">[REQUEST NEXT PROTOCOL]</button>
+                <p class="dim" style="color: var(--accent-green); margin-top: 10px; display: none;" id="protocol-confirm-msg">تم تسجيل طلبك. البروتوكول التالي في طريقه إليك.</p>
+
                 <!-- LIVE SYSTEM FEED -->
                 <div class="system-feed" id="system-feed">SCAN ACTIVE</div>
             </div>
@@ -1080,6 +1083,11 @@
                 }
                 localStorage.setItem('synapseX_monitoring_start', new Date().toISOString());
                 startSystemFeed();
+
+                const requestBtn = document.getElementById('btn-request-protocol');
+                if (requestBtn && (timerSeconds <= 0 || missionCompleted)) {
+                    requestBtn.style.display = 'inline-block';
+                }
             }
         }
 
@@ -1230,7 +1238,8 @@
                     document.getElementById('timer-box').style.borderColor = 'var(--accent-red)';
                     document.getElementById('expired-msg').style.display = 'block';
                     document.getElementById('btn-mission-complete').style.display = 'none';
-                    sendToWeb3Forms(operatorEmail || 'unknown', 'EXPIRED');
+                    const requestBtn = document.getElementById('btn-request-protocol');
+                    if (requestBtn) requestBtn.style.display = 'inline-block';
                 }
             }, 1000);
         }
@@ -1252,6 +1261,8 @@
             document.getElementById('expired-msg').style.display = 'none';
             document.getElementById('btn-mission-complete').style.display = 'none';
             document.getElementById('completion-badge').style.display = 'inline-block';
+            const requestBtn = document.getElementById('btn-request-protocol');
+            if (requestBtn) requestBtn.style.display = 'inline-block';
             triggerHaptic('light');
             sendToWeb3Forms(operatorEmail || 'unknown', 'COMPLETED');
         }
@@ -1478,6 +1489,37 @@ END OF REPORT
             localStorage.setItem('synapseX_last_visit', now);
         }
 
+        // ==================== REQUEST NEXT PROTOCOL (جديد) ====================
+        function requestNextProtocol() {
+            const emailInput = document.getElementById('operator-email');
+            const email = emailInput ? emailInput.value.trim() : '';
+            const requestBtn = document.getElementById('btn-request-protocol');
+            const confirmMsg = document.getElementById('protocol-confirm-msg');
+            
+            if (!email || !email.includes('@')) {
+                const emailGate = document.getElementById('email-gate');
+                if (emailGate) emailGate.style.display = 'block';
+                alert("لتلقي البروتوكول التالي، يجب إدخال بريدك الإلكتروني أولاً.");
+                return;
+            }
+            
+            if (requestBtn) {
+                requestBtn.disabled = true;
+                requestBtn.textContent = '✓ تم تسجيل الطلب';
+                requestBtn.style.borderColor = 'var(--accent-green)';
+                requestBtn.style.color = 'var(--accent-green)';
+            }
+            
+            if (confirmMsg) confirmMsg.style.display = 'block';
+            
+            if (!operatorEmail) {
+                operatorEmail = email;
+                localStorage.setItem('synapseX_operator_email', email);
+            }
+            sendToWeb3Forms(email, missionCompleted ? 'COMPLETED' : 'EXPIRED');
+            subscribeToKit(email);
+        }
+
         // ==================== INIT ====================
         window.onload = function() {
             checkReturnDetection();
@@ -1504,6 +1546,10 @@ END OF REPORT
                         rootHabit + ']';
                 }
                 startSystemFeed();
+                const requestBtn = document.getElementById('btn-request-protocol');
+                if (requestBtn && (missionCompleted || timerSeconds <= 0)) {
+                    requestBtn.style.display = 'inline-block';
+                }
                 return;
             }
 

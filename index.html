@@ -17,632 +17,117 @@
             --text-dim: #888888;
             --grid-color: rgba(0, 209, 255, 0.05);
         }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background-color: var(--bg-color); color: var(--text-main); font-family: 'Tajawal', sans-serif; overflow-x: hidden; min-height: 100vh; display: flex; justify-content: center; align-items: center; }
+        .grid-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(var(--grid-color) 1px, transparent 1px), linear-gradient(90deg, var(--grid-color) 1px, transparent 1px); background-size: 50px 50px; z-index: -1; mask-image: radial-gradient(circle at center, black, transparent 80%); }
+        .noise-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: 0.03; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+        .container { width: min(92%, 600px); text-align: center; z-index: 10; padding: 20px 0 40px; }
+        .screen { display: none; animation: fadeIn 0.6s ease forwards; } .screen.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes glitchPulse { 0%,100% { opacity: 0.8; } 50% { opacity: 0.2; } }
+        @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
+        @keyframes voidFade { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 0; } }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        h1 { font-weight: 700; letter-spacing: 2px; color: var(--accent-blue); margin-bottom: 1rem; text-shadow: 0 0 20px rgba(0,209,255,0.4); }
+        h2 { color: var(--text-main); margin-bottom: 2rem; font-weight: 500; }
+        h3 { color: var(--text-main); margin-bottom: 1rem; }
+        p { line-height: 1.8; color: var(--text-main); margin-bottom: 1.5rem; }
+        .dim { color: var(--text-dim); font-size: 0.9rem; }
+        .warning-text { color: var(--accent-red); font-size: 0.85rem; margin-top: 8px; display: none; }
+        .success-text { color: var(--accent-green); font-size: 0.85rem; margin-top: 8px; display: none; }
+        .terminal-line { font-family: 'Courier New', monospace; color: var(--accent-blue); text-align: left; direction: ltr; font-size: 0.9rem; margin: 4px 0; }
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: 'Tajawal', sans-serif;
-            overflow-x: hidden;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+        .btn { background: transparent; border: 1px solid var(--accent-blue); color: var(--accent-blue); padding: 12px 30px; font-family: 'Tajawal', sans-serif; font-weight: 600; font-size: 1rem; cursor: pointer; transition: transform 0.25s, box-shadow 0.25s, background 0.25s; text-transform: uppercase; letter-spacing: 2px; display: inline-block; margin: 8px 0; }
+        .btn:hover { background: rgba(0,209,255,0.1); box-shadow: 0 0 15px rgba(0,209,255,0.3); transform: translateY(-2px); }
+        .btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+        .btn-gold { border-color: var(--accent-gold); color: var(--accent-gold); }
+        .btn-gold:hover { background: rgba(212,175,55,0.1); box-shadow: 0 0 15px rgba(212,175,55,0.3); }
+        .btn-green { border-color: var(--accent-green); color: var(--accent-green); }
+        .btn-green:hover { background: rgba(0,230,118,0.1); box-shadow: 0 0 15px rgba(0,230,118,0.3); }
 
-        .grid-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image:
-                linear-gradient(var(--grid-color) 1px, transparent 1px),
-                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
-            background-size: 50px 50px;
-            z-index: -1;
-            mask-image: radial-gradient(circle at center, black, transparent 80%);
-        }
+        .pulse { width: 80px; height: 80px; border: 2px solid var(--accent-blue); border-radius: 50%; margin: 0 auto 20px; animation: pulse-ring 2s infinite; position: relative; }
+        .pulse::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 40px; height: 40px; border: 2px solid rgba(0,209,255,0.3); border-radius: 50%; animation: pulse-ring 2s infinite 0.5s; }
+        .pulse::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 8px; height: 8px; background: var(--accent-blue); border-radius: 50%; }
 
-        .noise-layer {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            pointer-events: none;
-            opacity: 0.03;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-        }
+        .progress-dots { display: flex; justify-content: center; gap: 18px; margin-bottom: 30px; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; background: #1a1a1a; border: 1px solid #333; transition: all 0.3s; }
+        .dot.completed { background: var(--accent-blue); border-color: var(--accent-blue); box-shadow: 0 0 10px rgba(0,209,255,0.6); }
+        .dot.active { background: transparent; border-color: var(--accent-blue); box-shadow: 0 0 14px rgba(0,209,255,0.9); animation: glitchPulse 1s infinite; }
 
-        .container {
-            width: min(92%, 600px);
-            text-align: center;
-            z-index: 10;
-            padding: 20px 0 40px;
-        }
+        .options-list { display: flex; flex-direction: column; gap: 12px; text-align: right; }
+        .option-item { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); padding: 16px 20px; cursor: pointer; transition: all 0.25s; border-radius: 2px; font-size: 1rem; }
+        .option-item:hover { border-color: var(--accent-blue); background: rgba(0,209,255,0.08); transform: translateX(-4px); box-shadow: 0 0 12px rgba(0,209,255,0.1); }
+        .option-item.selected { border-color: var(--accent-blue); background: rgba(0,209,255,0.12); }
 
-        .screen {
-            display: none;
-            animation: fadeIn 0.6s ease forwards;
-        }
-        .screen.active {
-            display: block;
-        }
+        .diagnostic-card, .monitoring-card { background: linear-gradient(145deg, #080D14 0%, #030508 100%); border: 1px solid rgba(255,255,255,0.08); padding: 30px 25px; text-align: right; border-radius: 4px; box-shadow: 0 0 0 1px rgba(255,255,255,0.03), 0 10px 40px rgba(0,0,0,0.6), 0 0 60px rgba(0,209,255,0.04); background-image: linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px); background-size: 100% 3px; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 20px; flex-wrap: wrap; gap: 8px; }
+        .card-badge { display: inline-block; background: rgba(255,75,75,0.15); color: var(--accent-red); padding: 4px 10px; font-size: 0.75rem; border: 1px solid rgba(255,75,75,0.3); margin-top: 8px; }
 
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        @keyframes glitchPulse {
-            0%,
-            100% {
-                opacity: 0.8;
-            }
-            50% {
-                opacity: 0.2;
-            }
-        }
-        @keyframes pulse-ring {
-            0% {
-                transform: scale(0.8);
-                opacity: 1;
-            }
-            100% {
-                transform: scale(1.5);
-                opacity: 0;
-            }
-        }
-        @keyframes voidFade {
-            0% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.3;
-            }
-            100% {
-                opacity: 0;
-            }
-        }
+        .blur-zone { filter: blur(10px); user-select: none; margin-top: 20px; transition: filter 1.2s ease-in-out; pointer-events: none; }
+        .unlocked .blur-zone { filter: blur(0); pointer-events: all; }
 
-        h1 {
-            font-weight: 700;
-            letter-spacing: 2px;
-            color: var(--accent-blue);
-            margin-bottom: 1rem;
-            text-shadow: 0 0 20px rgba(0, 209, 255, 0.4);
-        }
-        h2 {
-            color: var(--text-main);
-            margin-bottom: 2rem;
-            font-weight: 500;
-        }
-        h3 {
-            color: var(--text-main);
-            margin-bottom: 1rem;
-        }
-        p {
-            line-height: 1.8;
-            color: var(--text-main);
-            margin-bottom: 1.5rem;
-        }
-        .dim {
-            color: var(--text-dim);
-            font-size: 0.9rem;
-        }
-        .warning-text {
-            color: var(--accent-red);
-            font-size: 0.85rem;
-            margin-top: 8px;
-            display: none;
-        }
-        .success-text {
-            color: var(--accent-green);
-            font-size: 0.85rem;
-            margin-top: 8px;
-            display: none;
-        }
+        .operator-id-display { color: var(--accent-gold); font-family: 'Courier New', monospace; font-size: 0.8rem; letter-spacing: 1px; }
+        .timer-display { color: var(--accent-amber); font-family: 'Courier New', monospace; font-size: 1.2rem; letter-spacing: 2px; margin: 15px 0; padding: 8px 15px; border: 1px solid rgba(255,184,0,0.4); display: inline-block; background: rgba(255,184,0,0.05); box-shadow: 0 0 15px rgba(255,184,0,0.15); animation: glitchPulse 4s infinite; }
+        .timer-label { font-size: 0.7rem; color: var(--text-dim); display: block; letter-spacing: 1px; }
 
-        .terminal-line {
-            font-family: 'Courier New', 'Courier', monospace;
-            color: var(--accent-blue);
-            text-align: left;
-            direction: ltr;
-            font-size: 0.9rem;
-            margin: 4px 0;
-        }
+        input[type="text"], input[type="email"] { width: 100%; background: rgba(255,255,255,0.03); border: none; border-bottom: 1px solid rgba(255,255,255,0.2); color: white; padding: 12px 10px; margin-bottom: 16px; text-align: center; font-size: 1rem; outline: none; transition: border-color 0.3s; font-family: 'Tajawal', sans-serif; }
+        input:focus { border-bottom-color: var(--accent-blue); }
 
-        .btn {
-            background: transparent;
-            border: 1px solid var(--accent-blue);
-            color: var(--accent-blue);
-            padding: 12px 30px;
-            font-family: 'Tajawal', sans-serif;
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            display: inline-block;
-            margin: 8px 0;
-        }
-        .btn:hover {
-            background: rgba(0, 209, 255, 0.1);
-            box-shadow: 0 0 15px rgba(0, 209, 255, 0.3);
-            transform: translateY(-2px);
-        }
-        .btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-            transform: none;
-        }
-        .btn-gold {
-            border-color: var(--accent-gold);
-            color: var(--accent-gold);
-        }
-        .btn-gold:hover {
-            background: rgba(212, 175, 55, 0.1);
-            box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
-        }
-        .btn-green {
-            border-color: var(--accent-green);
-            color: var(--accent-green);
-        }
-        .btn-green:hover {
-            background: rgba(0, 230, 118, 0.1);
-            box-shadow: 0 0 15px rgba(0, 230, 118, 0.3);
-        }
+        .void-screen { background: radial-gradient(circle at center, rgba(255,255,255,0.02), #000 70%) !important; }
+        .void-text { color: rgba(255,255,255,0.5); font-size: 1.2rem; animation: voidFade 60s linear forwards; letter-spacing: 2px; }
 
-        .pulse {
-            width: 80px;
-            height: 80px;
-            border: 2px solid var(--accent-blue);
-            border-radius: 50%;
-            margin: 0 auto 20px;
-            animation: pulse-ring 2s infinite;
-            position: relative;
-        }
-        .pulse::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 40px;
-            height: 40px;
-            border: 2px solid rgba(0, 209, 255, 0.3);
-            border-radius: 50%;
-            animation: pulse-ring 2s infinite 0.5s;
-        }
-        .pulse::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 8px;
-            height: 8px;
-            background: var(--accent-blue);
-            border-radius: 50%;
-        }
+        #typewriter { min-height: 160px; margin-bottom: 2rem; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .resistance-warning { color: var(--accent-red); font-size: 0.8rem; font-weight: bold; height: 24px; margin-bottom: 10px; opacity: 0; transition: opacity 0.3s; letter-spacing: 1px; }
+        .friction-bar { width: 100%; height: 4px; background: #1a1a1a; margin: 15px 0; border-radius: 2px; }
+        .friction-fill { height: 100%; background: var(--accent-red); border-radius: 2px; transition: width 1s; }
 
-        .progress-dots {
-            display: flex;
-            justify-content: center;
-            gap: 18px;
-            margin-bottom: 30px;
-        }
-        .dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #1a1a1a;
-            border: 1px solid #333;
-            transition: all 0.3s ease;
-        }
-        .dot.completed {
-            background: var(--accent-blue);
-            border-color: var(--accent-blue);
-            box-shadow: 0 0 10px rgba(0, 209, 255, 0.6);
-        }
-        .dot.active {
-            background: transparent;
-            border-color: var(--accent-blue);
-            box-shadow: 0 0 14px rgba(0, 209, 255, 0.9);
-            animation: glitchPulse 1s infinite;
-        }
+        .checklist-item { display: flex; align-items: center; gap: 10px; text-align: right; margin: 12px 0; cursor: pointer; }
+        .checklist-item input[type="checkbox"] { width: 24px; height: 24px; cursor: pointer; accent-color: var(--accent-blue); }
+        .mission-box { border: 1px dashed var(--accent-amber); padding: 15px; margin-top: 20px; background: rgba(255,184,0,0.05); }
+        .badge-earned { display: inline-block; border: 1px solid var(--accent-blue); padding: 8px 20px; margin: 15px 0; color: var(--accent-blue); font-size: 0.85rem; letter-spacing: 2px; animation: glitchPulse 2s infinite; }
+        .expired-msg { color: var(--accent-red); font-size: 0.85rem; margin-top: 15px; display: none; }
 
-        .options-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            text-align: right;
-        }
-        .option-item {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 16px 20px;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            border-radius: 2px;
-            font-size: 1rem;
-        }
-        .option-item:hover {
-            border-color: var(--accent-blue);
-            background: rgba(0, 209, 255, 0.08);
-            transform: translateX(-4px);
-            box-shadow: 0 0 12px rgba(0, 209, 255, 0.1);
-        }
-        .option-item.selected {
-            border-color: var(--accent-blue);
-            background: rgba(0, 209, 255, 0.12);
-        }
-
-        .diagnostic-card,
-        .monitoring-card {
-            background: linear-gradient(145deg, #080D14 0%, #030508 100%);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 30px 25px;
-            text-align: right;
-            border-radius: 4px;
-            box-shadow:
-                0 0 0 1px rgba(255, 255, 255, 0.03),
-                0 10px 40px rgba(0, 0, 0, 0.6),
-                0 0 60px rgba(0, 209, 255, 0.04);
-            background-image: linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px);
-            background-size: 100% 3px;
-        }
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding-bottom: 12px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        .card-badge {
-            display: inline-block;
-            background: rgba(255, 75, 75, 0.15);
-            color: var(--accent-red);
-            padding: 4px 10px;
-            font-size: 0.75rem;
-            border: 1px solid rgba(255, 75, 75, 0.3);
-            margin-top: 8px;
-        }
-
-        .blur-zone {
-            filter: blur(10px);
-            user-select: none;
-            margin-top: 20px;
-            transition: filter 1.2s ease-in-out;
-            pointer-events: none;
-        }
-        .unlocked .blur-zone {
-            filter: blur(0);
-            pointer-events: all;
-        }
-
-        .operator-id-display {
-            color: var(--accent-gold);
-            font-family: 'Courier New', 'Courier', monospace;
-            font-size: 0.8rem;
-            letter-spacing: 1px;
-        }
-
-        .timer-display {
-            color: var(--accent-amber);
-            font-family: 'Courier New', 'Courier', monospace;
-            font-size: 1.2rem;
-            letter-spacing: 2px;
-            margin: 15px 0;
-            padding: 8px 15px;
-            border: 1px solid rgba(255, 184, 0, 0.4);
-            display: inline-block;
-            background: rgba(255, 184, 0, 0.05);
-            box-shadow: 0 0 15px rgba(255, 184, 0, 0.15);
-            animation: glitchPulse 4s infinite;
-        }
-        .timer-label {
-            font-size: 0.7rem;
-            color: var(--text-dim);
-            display: block;
-            letter-spacing: 1px;
-        }
-
-        input[type="text"],
-        input[type="email"] {
-            width: 100%;
-            background: rgba(255, 255, 255, 0.03);
-            border: none;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
-            padding: 12px 10px;
-            margin-bottom: 16px;
-            text-align: center;
-            font-size: 1rem;
-            outline: none;
-            transition: border-color 0.3s;
-            font-family: 'Tajawal', sans-serif;
-        }
-        input:focus {
-            border-bottom-color: var(--accent-blue);
-        }
-
-        .void-screen {
-            background: radial-gradient(circle at center, rgba(255, 255, 255, 0.02), #000 70%) !important;
-        }
-        .void-text {
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 1.2rem;
-            animation: voidFade 60s linear forwards;
-            letter-spacing: 2px;
-        }
-
-        #typewriter {
-            min-height: 160px;
-            margin-bottom: 2rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .resistance-warning {
-            color: var(--accent-red);
-            font-size: 0.8rem;
-            font-weight: bold;
-            height: 24px;
-            margin-bottom: 10px;
-            opacity: 0;
-            transition: opacity 0.3s;
-            letter-spacing: 1px;
-        }
-
-        .friction-bar {
-            width: 100%;
-            height: 4px;
-            background: #1a1a1a;
-            margin: 15px 0;
-            border-radius: 2px;
-        }
-        .friction-fill {
-            height: 100%;
-            background: var(--accent-red);
-            border-radius: 2px;
-            transition: width 1s ease;
-        }
-
-        .checklist-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            text-align: right;
-            margin: 12px 0;
-            cursor: pointer;
-        }
-        .checklist-item input[type="checkbox"] {
-            width: 24px;
-            height: 24px;
-            cursor: pointer;
-            accent-color: var(--accent-blue);
-        }
-
-        .mission-box {
-            border: 1px dashed var(--accent-amber);
-            padding: 15px;
-            margin-top: 20px;
-            background: rgba(255, 184, 0, 0.05);
-        }
-
-        .badge-earned {
-            display: inline-block;
-            border: 1px solid var(--accent-blue);
-            padding: 8px 20px;
-            margin: 15px 0;
-            color: var(--accent-blue);
-            font-size: 0.85rem;
-            letter-spacing: 2px;
-            animation: glitchPulse 2s infinite;
-        }
-
-        .expired-msg {
-            color: var(--accent-red);
-            font-size: 0.85rem;
-            margin-top: 15px;
-            display: none;
-        }
-
-        .phase-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 14px 18px;
-            margin: 10px 0;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 2px;
-            background: rgba(255, 255, 255, 0.01);
-            transition: all 0.3s ease;
-        }
-        .phase-item.active-phase {
-            border-color: var(--accent-blue);
-            background: rgba(0, 209, 255, 0.05);
-            box-shadow: 0 0 15px rgba(0, 209, 255, 0.1);
-        }
-        .phase-item.locked-phase {
-            opacity: 0.5;
-        }
-        .phase-status {
-            font-family: 'Courier New', 'Courier', monospace;
-            font-size: 0.8rem;
-            letter-spacing: 1px;
-        }
-        .phase-status.active {
-            color: var(--accent-blue);
-            animation: glitchPulse 2s infinite;
-        }
-        .phase-status.locked {
-            color: var(--text-dim);
-        }
-        .phase-name {
-            font-weight: 500;
-            font-size: 1rem;
-        }
-        .phase-desc {
-            font-size: 0.85rem;
-            color: var(--text-dim);
-            margin-top: 4px;
-        }
-        .redacted {
-            color: #333;
-            background: #1a1a1a;
-            letter-spacing: 2px;
-            user-select: none;
-        }
-        .codes-bar {
-            width: 100%;
-            height: 6px;
-            background: #1a1a1a;
-            border-radius: 3px;
-            margin: 20px 0;
-            overflow: hidden;
-        }
-        .codes-fill {
-            height: 100%;
-            background: var(--accent-blue);
-            border-radius: 3px;
-            transition: width 1.5s ease;
-        }
-        .divider {
-            border: none;
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
-            margin: 20px 0;
-        }
-        .system-note {
-            border-right: 2px solid var(--accent-amber);
-            padding: 10px 15px;
-            margin: 15px 0;
-            background: rgba(255, 184, 0, 0.03);
-            text-align: right;
-        }
-
-        .system-feed {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            right: 10px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.7rem;
-            color: var(--accent-amber);
-            opacity: 0.7;
-            text-align: center;
-            animation: fadeIn 1s ease;
-        }
-        .locked-module {
-            cursor: pointer;
-            padding: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            margin: 6px 0;
-            transition: background 0.2s;
-        }
-        .locked-module:hover {
-            background: rgba(255, 255, 255, 0.02);
-        }
-        .toast-message {
-            position: fixed;
-            top: env(safe-area-inset-top, 20px);
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(10px);
-            color: var(--accent-amber);
-            padding: 12px 25px;
-            border: 1px solid rgba(255, 184, 0, 0.3);
-            box-shadow: 0 0 20px rgba(255, 184, 0, 0.08);
-            z-index: 100;
-            font-family: 'Courier New', monospace;
-            font-size: 0.8rem;
-            opacity: 0;
-            transition: opacity 0.5s;
-            pointer-events: none;
-        }
-        .toast-message.show {
-            opacity: 1;
-        }
+        .phase-item { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; margin: 10px 0; border: 1px solid rgba(255,255,255,0.06); border-radius: 2px; background: rgba(255,255,255,0.01); transition: all 0.3s; }
+        .phase-item.active-phase { border-color: var(--accent-blue); background: rgba(0,209,255,0.05); box-shadow: 0 0 15px rgba(0,209,255,0.1); }
+        .phase-item.locked-phase { opacity: 0.5; }
+        .phase-status { font-family: 'Courier New', monospace; font-size: 0.8rem; letter-spacing: 1px; }
+        .phase-status.active { color: var(--accent-blue); animation: glitchPulse 2s infinite; }
+        .phase-status.locked { color: var(--text-dim); }
+        .phase-name { font-weight: 500; font-size: 1rem; }
+        .phase-desc { font-size: 0.85rem; color: var(--text-dim); margin-top: 4px; }
+        .redacted { color: #333; background: #1a1a1a; letter-spacing: 2px; user-select: none; }
+        .codes-bar { width: 100%; height: 6px; background: #1a1a1a; border-radius: 3px; margin: 20px 0; overflow: hidden; }
+        .codes-fill { height: 100%; background: var(--accent-blue); border-radius: 3px; transition: width 1.5s; }
+        .divider { border: none; border-top: 1px solid rgba(255,255,255,0.06); margin: 20px 0; }
+        .system-note { border-right: 2px solid var(--accent-amber); padding: 10px 15px; margin: 15px 0; background: rgba(255,184,0,0.03); text-align: right; }
+        .system-feed { position: absolute; bottom: 10px; left: 10px; right: 10px; font-family: 'Courier New', monospace; font-size: 0.7rem; color: var(--accent-amber); opacity: 0.7; text-align: center; }
+        .locked-module { cursor: pointer; padding: 8px; border: 1px solid rgba(255,255,255,0.05); margin: 6px 0; transition: background 0.2s; }
+        .locked-module:hover { background: rgba(255,255,255,0.02); }
+        .toast-message { position: fixed; top: env(safe-area-inset-top, 20px); left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); color: var(--accent-amber); padding: 12px 25px; border: 1px solid rgba(255,184,0,0.3); box-shadow: 0 0 20px rgba(255,184,0,0.08); z-index: 100; font-family: 'Courier New', monospace; font-size: 0.8rem; opacity: 0; transition: opacity 0.5s; pointer-events: none; }
+        .toast-message.show { opacity: 1; }
 
         @media (max-width: 480px) {
-            .diagnostic-card,
-            .monitoring-card {
-                padding: 20px 15px;
-            }
-            h1 {
-                font-size: 1.5rem;
-            }
-            h2 {
-                font-size: 1.2rem;
-            }
-            .option-item {
-                padding: 14px 16px;
-                font-size: 0.95rem;
-            }
-            .timer-display {
-                font-size: 1rem;
-                padding: 6px 12px;
-            }
-            .phase-item {
-                padding: 10px 14px;
-            }
-            .btn {
-                width: 100%;
-            }
-            .checklist-item input[type="checkbox"] {
-                width: 24px;
-                height: 24px;
-            }
+            .diagnostic-card, .monitoring-card { padding: 20px 15px; }
+            h1 { font-size: 1.5rem; } h2 { font-size: 1.2rem; }
+            .option-item { padding: 14px 16px; font-size: 0.95rem; }
+            .timer-display { font-size: 1rem; padding: 6px 12px; }
+            .phase-item { padding: 10px 14px; }
+            .btn { width: 100%; }
+            .checklist-item input[type="checkbox"] { width: 24px; height: 24px; }
         }
-
         @media (max-width: 360px) {
-            .diagnostic-card,
-            .monitoring-card {
-                padding: 15px 10px;
-            }
-            h1 {
-                font-size: 1.3rem;
-            }
-            h2 {
-                font-size: 1.1rem;
-            }
-            .option-item {
-                padding: 12px 14px;
-                font-size: 0.9rem;
-            }
+            .diagnostic-card, .monitoring-card { padding: 15px 10px; }
+            h1 { font-size: 1.3rem; } h2 { font-size: 1.1rem; }
+            .option-item { padding: 12px 14px; font-size: 0.9rem; }
         }
     </style>
 </head>
 <body>
-
     <div class="grid-overlay"></div>
     <div class="noise-layer"></div>
-
     <div id="toast" class="toast-message"></div>
 
     <div class="container">
-
-        <!-- SCREEN 0: ORIENTATION -->
         <div id="screen0" class="screen active">
             <h1 style="color: white; letter-spacing: 4px;">SYNAPSE-X ORIENTATION</h1>
             <div class="pulse" style="border-color: var(--accent-amber); margin-top: 30px;"></div>
@@ -656,14 +141,12 @@
             <p class="dim" style="margin-top: 15px; font-size: 0.7rem;">لا يتم حفظ أي بيانات على خوادم خارجية. نظامك يبقى نظامك.</p>
         </div>
 
-        <!-- SCREEN 1: FIRST BOOT -->
         <div id="screen1" class="screen">
             <h1 style="color: white; letter-spacing: 6px;">SYNAPSE-X</h1>
             <div id="typewriter"></div>
             <button class="btn" id="btn-start-scan" style="display: none;" onclick="nextScreen(2)">PRESS TO BEGIN SCAN</button>
         </div>
 
-        <!-- SCREEN 2: SCAN INTRO -->
         <div id="screen2" class="screen">
             <div class="pulse"></div>
             <h1>NEURAL SCAN ACTIVE</h1>
@@ -672,7 +155,6 @@
             <button class="btn" onclick="nextScreen(3)">BEGIN DIAGNOSIS</button>
         </div>
 
-        <!-- SCREEN 3: QUESTIONS -->
         <div id="screen3" class="screen">
             <div class="resistance-warning" id="resistance-msg">[SYSTEM] تم رصد مقاومة في جدار الحماية [PROTECT]</div>
             <div class="progress-dots" id="dots"></div>
@@ -686,14 +168,12 @@
             </div>
         </div>
 
-        <!-- SCREEN 4: DEEP ANALYSIS -->
         <div id="screen4" class="screen">
             <div class="pulse" style="border-color: var(--accent-amber);"></div>
             <h1 style="color: var(--accent-amber);">DEEP SYSTEM ANALYSIS</h1>
             <div id="analysis-lines" style="text-align: left; direction: ltr; margin: 0 auto; max-width: 400px;"></div>
         </div>
 
-        <!-- SCREEN 5: DIAGNOSTIC CARD -->
         <div id="screen5" class="screen">
             <div class="diagnostic-card" id="main-card">
                 <div class="card-header">
@@ -704,9 +184,7 @@
                 <h3>PRIMARY SYSTEM CONFLICT:<br><span style="color: var(--accent-red);" id="conflict-type">[PROTECT]</span></h3>
                 <span class="card-badge">DISRUPT Phase Recommended</span>
 
-                <div class="friction-bar">
-                    <div class="friction-fill" id="friction-fill"></div>
-                </div>
+                <div class="friction-bar"><div class="friction-fill" id="friction-fill"></div></div>
                 <p class="dim" style="font-size: 0.8rem;">SYSTEM INTEGRITY: <span id="integrity-score">34%</span></p>
 
                 <div class="system-note" id="system-note">
@@ -767,7 +245,6 @@
             </div>
         </div>
 
-        <!-- SCREEN 6: THE VOID -->
         <div id="screen6" class="screen void-screen">
             <div style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column;">
                 <p class="void-text" id="void-text">نظامك الآن فارغ.<br>المساحة جاهزة للبناء.</p>
@@ -776,7 +253,6 @@
             </div>
         </div>
 
-        <!-- SCREEN 7: SELF-MONITORING PROTOCOL (ENHANCED) -->
         <div id="screen7" class="screen">
             <div class="monitoring-card" style="position: relative;">
                 <div class="card-header">
@@ -788,81 +264,24 @@
                 <p class="dim" style="margin-bottom: 25px;">تم تأكيد هويتك كمشغّل.<br>النظام الآن في وضع المراقبة الذاتية.</p>
 
                 <hr class="divider">
-
-                <!-- PHASE 1: PARTIALLY COMPLETE -->
-                <div class="phase-item active-phase">
-                    <div>
-                        <div class="phase-name" style="color: var(--accent-blue);">[01] SCAN — المسح الإدراكي</div>
-                        <div class="phase-desc">الحالة: مكتمل جزئيًا (المسودة الأولية)</div>
-                    </div>
-                    <span class="phase-status active">◉ جزئي</span>
-                </div>
-
-                <!-- PHASE 2: LOCKED -->
-                <div class="phase-item locked-phase">
-                    <div>
-                        <div class="phase-name redacted">[02] ████████████████████</div>
-                        <div class="phase-desc redacted">████████████████████</div>
-                    </div>
-                    <span class="phase-status locked">□ مقفلة</span>
-                </div>
-
-                <!-- PHASE 3: LOCKED -->
-                <div class="phase-item locked-phase">
-                    <div>
-                        <div class="phase-name redacted">[03] ████████████████████</div>
-                        <div class="phase-desc redacted">████████████████████</div>
-                    </div>
-                    <span class="phase-status locked">□ مقفلة</span>
-                </div>
-
-                <!-- PHASE 4: LOCKED -->
-                <div class="phase-item locked-phase">
-                    <div>
-                        <div class="phase-name redacted">[04] ████████████████████</div>
-                        <div class="phase-desc redacted">████████████████████</div>
-                    </div>
-                    <span class="phase-status locked">□ مقفلة</span>
-                </div>
-
+                <div class="phase-item active-phase"><div><div class="phase-name" style="color: var(--accent-blue);">[01] SCAN — المسح الإدراكي</div><div class="phase-desc">الحالة: مكتمل جزئيًا (المسودة الأولية)</div></div><span class="phase-status active">◉ جزئي</span></div>
+                <div class="phase-item locked-phase"><div><div class="phase-name redacted">[02] ████████████████████</div><div class="phase-desc redacted">████████████████████</div></div><span class="phase-status locked">□ مقفلة</span></div>
+                <div class="phase-item locked-phase"><div><div class="phase-name redacted">[03] ████████████████████</div><div class="phase-desc redacted">████████████████████</div></div><span class="phase-status locked">□ مقفلة</span></div>
+                <div class="phase-item locked-phase"><div><div class="phase-name redacted">[04] ████████████████████</div><div class="phase-desc redacted">████████████████████</div></div><span class="phase-status locked">□ مقفلة</span></div>
                 <hr class="divider">
 
-                <div class="codes-bar">
-                    <div class="codes-fill" style="width: 18%;"></div>
-                </div>
+                <div class="codes-bar"><div class="codes-fill" style="width: 18%;"></div></div>
                 <p class="dim" style="font-size: 0.7rem;">تم كشف 18% من أكواد التشغيل. البقية مخفية.</p>
-
                 <p class="dim" style="margin-top: 20px;">مراحل النظام: 4<br>لن تُفتح التالية حتى تكتمل الحالية.</p>
-
                 <hr class="divider">
 
-                <!-- LOCKED MODULES -->
                 <p style="color: var(--accent-amber); font-size: 0.85rem; margin-bottom: 10px;">[LOCKED MODULES]</p>
-                <div class="locked-module" onclick="alert('ACCESS RESTRICTED — SCAN PHASE INCOMPLETE')">
-                    <span style="color: var(--accent-red);">◈</span> EMOTIONAL ARCHIVE
-                </div>
-                <div class="locked-module" onclick="alert('ACCESS RESTRICTED — SCAN PHASE INCOMPLETE')">
-                    <span style="color: var(--accent-red);">◈</span> TRIGGER MAP
-                </div>
-                <div class="locked-module" onclick="alert('ACCESS RESTRICTED — SCAN PHASE INCOMPLETE')">
-                    <span style="color: var(--accent-red);">◈</span> CORE MEMORY INDEX
-                </div>
-
+                <div class="locked-module" onclick="alert('ACCESS RESTRICTED — SCAN PHASE INCOMPLETE')"><span style="color: var(--accent-red);">◈</span> EMOTIONAL ARCHIVE</div>
+                <div class="locked-module" onclick="alert('ACCESS RESTRICTED — SCAN PHASE INCOMPLETE')"><span style="color: var(--accent-red);">◈</span> TRIGGER MAP</div>
+                <div class="locked-module" onclick="alert('ACCESS RESTRICTED — SCAN PHASE INCOMPLETE')"><span style="color: var(--accent-red);">◈</span> CORE MEMORY INDEX</div>
                 <hr class="divider">
 
-                <p class="dim" style="font-size: 0.85rem;">
-                    <strong style="color: var(--accent-amber);">ما أكملته للتو:</strong><br>
-                    ✓ المسح المبدئي (Initial Scan)<br>
-                    ✓ تحديد نمط [PROTECT] الأساسي<br>
-                    ✓ أول مهمة اختراق<br><br>
-                    <strong style="color: var(--accent-amber);">ما لم يكتمل بعد (في النظام الكامل):</strong><br>
-                    □ مرحلة SCAN المتعمقة (3 أيام)<br>
-                    □ أدوات الرصد التفصيلية<br>
-                    □ تحليل الأنماط المتكررة<br>
-                    □ الربط بين المحفزات العاطفية والسلوك<br><br>
-                    <span style="color: var(--accent-amber);">المرحلة الأولى لم تنتهِ. أنت على عتبتها.</span>
-                </p>
-
+                <p class="dim" style="font-size: 0.85rem;"><strong style="color: var(--accent-amber);">ما أكملته للتو:</strong><br>✓ المسح المبدئي (Initial Scan)<br>✓ تحديد نمط [PROTECT] الأساسي<br>✓ أول مهمة اختراق<br><br><strong style="color: var(--accent-amber);">ما لم يكتمل بعد (في النظام الكامل):</strong><br>□ مرحلة SCAN المتعمقة (3 أيام)<br>□ أدوات الرصد التفصيلية<br>□ تحليل الأنماط المتكررة<br>□ الربط بين المحفزات العاطفية والسلوك<br><br><span style="color: var(--accent-amber);">المرحلة الأولى لم تنتهِ. أنت على عتبتها.</span></p>
                 <hr class="divider">
 
                 <p class="dim" style="font-size: 0.85rem;">حتى ذلك الحين:<br>لا تبحث عن النظام. عش حياتك.<br>عندما تظهر <strong style="color: var(--accent-red);" id="monitor-habit"></strong>، توقف 10 ثوانٍ وسجّل.<br>بعد 3 أيام، ستصلك إشارة.</p>
@@ -875,15 +294,12 @@
                 <button class="btn btn-gold" id="btn-request-protocol" onclick="requestNextProtocol()" style="margin-top: 20px; display: none;">[REQUEST NEXT PROTOCOL]</button>
                 <p class="dim" style="color: var(--accent-green); margin-top: 10px; display: none;" id="protocol-confirm-msg">تم تسجيل طلبك. البروتوكول التالي في طريقه إليك.</p>
 
-                <!-- LIVE SYSTEM FEED -->
                 <div class="system-feed" id="system-feed">SCAN ACTIVE</div>
             </div>
         </div>
-
     </div>
 
     <script>
-        // ==================== GLOBAL STATE ====================
         let currentQuestion = 0;
         const totalQuestions = 9;
         let operatorEmail = '';
@@ -901,7 +317,6 @@
         const WEB3FORMS_KEY = '62d79786-1ef2-405e-a7d0-0246e81dd0c2';
         const KIT_FORM_UID = '31e29ef833';
 
-        // ==================== PATTERNS DATABASE ====================
         const patterns = {
             'الخوف من الفشل': {
                 name: 'الحارس القلق',
@@ -933,7 +348,6 @@
             }
         };
 
-        // ==================== HAPTIC FEEDBACK ====================
         function triggerHaptic(type = 'light') {
             if (navigator.vibrate) {
                 if (type === 'light') navigator.vibrate(20);
@@ -941,88 +355,45 @@
             }
         }
 
-        // ==================== QUESTIONS ====================
         const questions = [
-            { q: "[PROTECT] QUERY 01: عندما تحاول تغيير شيء مهم، ما هو أول ما يظهر؟", opts: ["الخوف من الفشل",
-                    "التشتت والانشغال المفاجئ", "التردد والتفكير الزائد", "القلق من رأي الآخرين"
-                ] },
-            { q: "[PROTECT] QUERY 02: عندما تقاوم التغيير... ما القصة التي تحكيها لنفسك؟", opts: ["لست مستعدًا بعد",
-                    "الوقت غير مناسب", "الأمر ليس مهمًا حقًا", "سأبدأ غدًا"
-                ] },
-            { q: "[PROTECT] QUERY 03: أين تشعر بالمقاومة في جسدك عندما تحاول التقدم؟", opts: ["في الصدر (ثقل)",
-                    "في الرأس (فوضى)", "في المعدة (توتر)", "لا أشعر بشيء"
-                ] },
-            { q: "[PROTECT] QUERY 04: ما الذي تخسره إذا نجحت في التغيير؟", opts: ["راحة المألوف", "عذر الفشل",
-                    "تعاطف الآخرين", "لا شيء"
-                ] },
-            { q: "[PROTECT] QUERY 05: عندما يتعطل التغيير... من يحميك [PROTECT] من مواجهته؟", opts: ["نفسي الحقيقية",
-                    "احتمالية الفشل", "حكم الآخرين", "الشعور بالضعف"
-                ] },
-            { q: "[PROTECT] QUERY 06: قبل أن تتراجع مباشرة... ماذا يحدث داخلك؟", opts: [
-                    "أشعر أنني أهرب من شيء لا أريد رؤيته", "يبدأ عقلي بالتبرير", "أبحث عن أي مشتت",
-                    "أشعر أن الأمر بلا معنى"
-                ] },
-            { q: "[PROTECT] QUERY 07: ماذا تحتاج أن تصدق عن نفسك لتتغير حقًا؟", opts: ["أنني قادر", "أنني أستحق",
-                    "أن التغيير آمن", "لا أعرف"
-                ] },
-            { q: "[PROTECT] QUERY 08: ما هو أكبر شيء تخلى عنه [PROTECT] ليحميك؟", opts: ["أحلامي", "علاقاتي", "صحتي",
-                    "لا أعرف"
-                ] }
+            { q: "[PROTECT] QUERY 01: عندما تحاول تغيير شيء مهم، ما هو أول ما يظهر؟", opts: ["الخوف من الفشل", "التشتت والانشغال المفاجئ", "التردد والتفكير الزائد", "القلق من رأي الآخرين"] },
+            { q: "[PROTECT] QUERY 02: عندما تقاوم التغيير... ما القصة التي تحكيها لنفسك؟", opts: ["لست مستعدًا بعد", "الوقت غير مناسب", "الأمر ليس مهمًا حقًا", "سأبدأ غدًا"] },
+            { q: "[PROTECT] QUERY 03: أين تشعر بالمقاومة في جسدك عندما تحاول التقدم؟", opts: ["في الصدر (ثقل)", "في الرأس (فوضى)", "في المعدة (توتر)", "لا أشعر بشيء"] },
+            { q: "[PROTECT] QUERY 04: ما الذي تخسره إذا نجحت في التغيير؟", opts: ["راحة المألوف", "عذر الفشل", "تعاطف الآخرين", "لا شيء"] },
+            { q: "[PROTECT] QUERY 05: عندما يتعطل التغيير... من يحميك [PROTECT] من مواجهته؟", opts: ["نفسي الحقيقية", "احتمالية الفشل", "حكم الآخرين", "الشعور بالضعف"] },
+            { q: "[PROTECT] QUERY 06: قبل أن تتراجع مباشرة... ماذا يحدث داخلك؟", opts: ["أشعر أنني أهرب من شيء لا أريد رؤيته", "يبدأ عقلي بالتبرير", "أبحث عن أي مشتت", "أشعر أن الأمر بلا معنى"] },
+            { q: "[PROTECT] QUERY 07: ماذا تحتاج أن تصدق عن نفسك لتتغير حقًا؟", opts: ["أنني قادر", "أنني أستحق", "أن التغيير آمن", "لا أعرف"] },
+            { q: "[PROTECT] QUERY 08: ما هو أكبر شيء تخلى عنه [PROTECT] ليحميك؟", opts: ["أحلامي", "علاقاتي", "صحتي", "لا أعرف"] }
         ];
 
-        // ==================== SCREEN 0: ORIENTATION ====================
         const habitInput = document.getElementById('habit-input');
         const btnEnterSystem = document.getElementById('btn-enter-system');
         const habitHint = document.getElementById('habit-hint');
 
         habitInput.addEventListener('input', function() {
-            if (this.value.trim().length >= 3) {
-                btnEnterSystem.disabled = false;
-                habitHint.style.display = 'block';
-            } else {
-                btnEnterSystem.disabled = true;
-                habitHint.style.display = 'none';
-            }
+            if (this.value.trim().length >= 3) { btnEnterSystem.disabled = false; habitHint.style.display = 'block'; }
+            else { btnEnterSystem.disabled = true; habitHint.style.display = 'none'; }
         });
 
         habitInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && this.value.trim().length >= 3) {
-                startSystem();
-            }
+            if (e.key === 'Enter' && this.value.trim().length >= 3) startSystem();
         });
 
         function startSystem() {
             rootHabit = habitInput.value.trim();
-            if (rootHabit.length < 3) {
-                alert("الرجاء إدخال عادة واضحة. النظام يحتاج إلى بيانات دقيقة.");
-                return;
-            }
+            if (rootHabit.length < 3) { alert("الرجاء إدخال عادة واضحة."); return; }
             triggerHaptic('light');
             localStorage.setItem('synapseX_root_habit', rootHabit);
             nextScreen(1);
             bootSequence();
         }
 
-        // ==================== SCREEN 1: BOOT SEQUENCE ====================
-        const bootLines = [
-            "INITIALIZING NEURAL INTERFACE...",
-            "SYSTEM STATUS: ACTIVE",
-            "LOADING SYNAPSE-X CORE MODULES...",
-            "SCANNING FOR LEGACY BEHAVIORAL LOOPS...",
-            "WARNING: UNPROCESSED PATTERNS DETECTED.",
-            "ROOT KEY: REGISTERED.",
-            "THIS SYSTEM DOES NOT DELIVER CONTENT.",
-            "IT READS YOU FIRST."
-        ];
-
-        let lineIdx = 0;
-        let charIdx = 0;
+        const bootLines = ["INITIALIZING NEURAL INTERFACE...", "SYSTEM STATUS: ACTIVE", "LOADING SYNAPSE-X CORE MODULES...", "SCANNING FOR LEGACY BEHAVIORAL LOOPS...", "WARNING: UNPROCESSED PATTERNS DETECTED.", "ROOT KEY: REGISTERED.", "THIS SYSTEM DOES NOT DELIVER CONTENT.", "IT READS YOU FIRST."];
+        let lineIdx = 0; let charIdx = 0;
         const typeTarget = document.getElementById('typewriter');
 
         function bootSequence() {
-            lineIdx = 0;
-            charIdx = 0;
-            typeTarget.innerHTML = '';
+            lineIdx = 0; charIdx = 0; typeTarget.innerHTML = '';
             document.getElementById('btn-start-scan').style.display = 'none';
             type();
         }
@@ -1031,18 +402,16 @@
             if (lineIdx < bootLines.length) {
                 if (charIdx === 0) {
                     const lineDiv = document.createElement('div');
-                    lineDiv.className = 'terminal-line';
-                    lineDiv.id = 'line-' + lineIdx;
+                    lineDiv.className = 'terminal-line'; lineDiv.id = 'line-' + lineIdx;
                     typeTarget.appendChild(lineDiv);
                 }
-                const currentLineDiv = document.getElementById('line-' + lineIdx);
-                if (currentLineDiv && charIdx < bootLines[lineIdx].length) {
-                    currentLineDiv.textContent += bootLines[lineIdx].charAt(charIdx);
+                const current = document.getElementById('line-' + lineIdx);
+                if (current && charIdx < bootLines[lineIdx].length) {
+                    current.textContent += bootLines[lineIdx].charAt(charIdx);
                     charIdx++;
                     setTimeout(type, 25);
                 } else {
-                    charIdx = 0;
-                    lineIdx++;
+                    charIdx = 0; lineIdx++;
                     setTimeout(type, 350);
                 }
             } else {
@@ -1050,182 +419,107 @@
             }
         }
 
-        document.getElementById('btn-start-scan').onclick = () => {
-            triggerHaptic('light');
-            nextScreen(2);
-        };
+        document.getElementById('btn-start-scan').onclick = () => { triggerHaptic('light'); nextScreen(2); };
 
-        // ==================== NAVIGATION ====================
         function nextScreen(num) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById('screen' + num).classList.add('active');
-
-            if (num === 3) {
-                currentQuestion = 0;
-                loadQuestion();
-            }
-            if (num === 4) {
-                startDeepAnalysis();
-            }
-            if (num === 5) {
-                populateDiagnosticCard();
-                startTimer();
-            }
-            if (num === 6) {
-                startVoid();
-            }
+            if (num === 3) { currentQuestion = 0; loadQuestion(); }
+            if (num === 4) startDeepAnalysis();
+            if (num === 5) { populateDiagnosticCard(); startTimer(); }
+            if (num === 6) startVoid();
             if (num === 7) {
                 document.getElementById('op-id-display-7').textContent = 'OP-ID: ' + (operatorId || 'PENDING');
                 document.getElementById('monitor-habit').textContent = rootHabit;
-                if (rootHabit) {
-                    document.getElementById('personal-echo').textContent = 'تم رصد محاولة هروب مرتبطة بـ [' + rootHabit +
-                        ']';
-                }
+                if (rootHabit) document.getElementById('personal-echo').textContent = 'تم رصد محاولة هروب مرتبطة بـ [' + rootHabit + ']';
                 localStorage.setItem('synapseX_monitoring_start', new Date().toISOString());
                 startSystemFeed();
-
-                const requestBtn = document.getElementById('btn-request-protocol');
-                if (requestBtn && (timerSeconds <= 0 || missionCompleted)) {
-                    requestBtn.style.display = 'inline-block';
+                if (timerSeconds <= 0 || missionCompleted) {
+                    document.getElementById('btn-request-protocol').style.display = 'inline-block';
                 }
             }
         }
 
-        // ==================== SCREEN 3: QUESTIONS ====================
         function loadQuestion() {
-            const resistanceMsg = document.getElementById('resistance-msg');
-            resistanceMsg.style.opacity = '0';
+            document.getElementById('resistance-msg').style.opacity = '0';
             questionStartTime = Date.now();
+            document.getElementById('open-question-zone').style.display = 'none';
+            document.getElementById('options-container').style.display = 'block';
+            document.getElementById('question-text').style.display = 'block';
 
-            const dotsContainer = document.getElementById('dots');
-            const openZone = document.getElementById('open-question-zone');
-            const optionsContainer = document.getElementById('options-container');
-            const questionText = document.getElementById('question-text');
-
-            openZone.style.display = 'none';
-            optionsContainer.style.display = 'block';
-            questionText.style.display = 'block';
-
-            dotsContainer.innerHTML = '';
+            let dotsHtml = '';
             for (let i = 0; i < totalQuestions; i++) {
-                let dotClass = '';
-                if (i < currentQuestion) dotClass = 'completed';
-                else if (i === currentQuestion) dotClass = 'active';
-                dotsContainer.innerHTML += `<div class="dot ${dotClass}"></div>`;
+                let cls = i < currentQuestion ? 'completed' : (i === currentQuestion ? 'active' : '');
+                dotsHtml += `<div class="dot ${cls}"></div>`;
             }
+            document.getElementById('dots').innerHTML = dotsHtml;
 
             if (currentQuestion >= questions.length) {
-                questionText.style.display = 'none';
-                optionsContainer.style.display = 'none';
-                openZone.style.display = 'block';
+                document.getElementById('question-text').style.display = 'none';
+                document.getElementById('options-container').style.display = 'none';
+                document.getElementById('open-question-zone').style.display = 'block';
                 const openInput = document.getElementById('open-answer');
                 const openBtn = document.getElementById('btn-submit-open');
-                openInput.value = '';
-                openBtn.disabled = true;
-                openInput.addEventListener('input', function() {
-                    openBtn.disabled = this.value.trim().length < 1;
-                });
+                openInput.value = ''; openBtn.disabled = true;
+                openInput.oninput = () => { openBtn.disabled = openInput.value.trim().length < 1; };
             } else {
-                questionText.innerText = questions[currentQuestion].q;
-                optionsContainer.innerHTML = questions[currentQuestion].opts.map(opt => `
-                    <div class="option-item" onclick="handleAnswer(this)">${opt}</div>
-                `).join('');
+                document.getElementById('question-text').innerText = questions[currentQuestion].q;
+                document.getElementById('options-container').innerHTML = questions[currentQuestion].opts.map(opt => `<div class="option-item" onclick="handleAnswer(this)">${opt}</div>`).join('');
             }
         }
 
-        function handleAnswer(element) {
+        function handleAnswer(el) {
             const elapsed = (Date.now() - questionStartTime) / 1000;
             if (elapsed > 5) {
-                const resistanceMsg = document.getElementById('resistance-msg');
-                resistanceMsg.style.opacity = '1';
-                resistanceMsg.textContent = '[SYSTEM] تم رصد مقاومة في جدار الحماية [PROTECT]';
+                const msg = document.getElementById('resistance-msg');
+                msg.style.opacity = '1'; msg.textContent = '[SYSTEM] تم رصد مقاومة في جدار الحماية [PROTECT]';
                 triggerHaptic('warning');
-                setTimeout(() => { resistanceMsg.style.opacity = '0'; }, 3000);
+                setTimeout(() => msg.style.opacity = '0', 3000);
             }
             if (currentQuestion === 0 && elapsed > 8) {
-                const resistanceMsg = document.getElementById('resistance-msg');
-                resistanceMsg.textContent = '[ADAPTIVE] تردد في الاستجابة. جدار الحماية ينشط.';
-                resistanceMsg.style.opacity = '1';
-                setTimeout(() => { resistanceMsg.style.opacity = '0'; }, 3000);
+                const msg = document.getElementById('resistance-msg');
+                msg.textContent = '[ADAPTIVE] تردد في الاستجابة. جدار الحماية ينشط.';
+                msg.style.opacity = '1';
+                setTimeout(() => msg.style.opacity = '0', 3000);
             }
-
-            if (currentQuestion === 0) {
-                detectedPattern = element.textContent.trim();
-            }
-
-            element.classList.add('selected');
+            if (currentQuestion === 0) detectedPattern = el.textContent.trim();
+            el.classList.add('selected');
             triggerHaptic('light');
-            setTimeout(() => {
-                currentQuestion++;
-                if (currentQuestion <= questions.length) {
-                    loadQuestion();
-                }
-            }, 250);
+            setTimeout(() => { currentQuestion++; if (currentQuestion <= questions.length) loadQuestion(); }, 250);
         }
 
         function submitOpenAnswer() {
             openAnswer = document.getElementById('open-answer').value.trim();
-            if (openAnswer.length < 1) return;
-            triggerHaptic('light');
-            currentQuestion++;
-            nextScreen(4);
+            if (!openAnswer) return;
+            triggerHaptic('light'); currentQuestion++; nextScreen(4);
         }
 
-        // ==================== SCREEN 4: DEEP ANALYSIS ====================
         function startDeepAnalysis() {
-            const analysisLines = [
-                "Cross-referencing behavioral databases...",
-                "Calculating System Friction Index...",
-                "Identifying recurrent loop patterns...",
-                "Mapping emotional triggers...",
-                "Analyzing protection layer density...",
-                "Diagnostic ready."
-            ];
+            const lines = ["Cross-referencing behavioral databases...", "Calculating System Friction Index...", "Identifying recurrent loop patterns...", "Mapping emotional triggers...", "Analyzing protection layer density...", "Diagnostic ready."];
             const container = document.getElementById('analysis-lines');
-            container.innerHTML = '';
-            let i = 0;
-
-            function showLine() {
-                if (i < analysisLines.length) {
-                    const div = document.createElement('div');
-                    div.className = 'terminal-line';
-                    div.textContent = analysisLines[i];
-                    div.style.opacity = '0';
-                    div.style.transition = 'opacity 0.3s ease';
-                    container.appendChild(div);
-                    setTimeout(() => { div.style.opacity = '1'; }, 50);
-                    i++;
-                    setTimeout(showLine, 800);
-                } else {
-                    setTimeout(() => nextScreen(5), 1000);
-                }
+            container.innerHTML = ''; let i = 0;
+            function show() {
+                if (i < lines.length) {
+                    const div = document.createElement('div'); div.className = 'terminal-line'; div.textContent = lines[i]; div.style.opacity = '0';
+                    container.appendChild(div); setTimeout(() => div.style.opacity = '1', 50);
+                    i++; setTimeout(show, 800);
+                } else setTimeout(() => nextScreen(5), 1000);
             }
-            showLine();
+            show();
         }
 
-        // ==================== SCREEN 5: POPULATE CARD ====================
         function populateDiagnosticCard() {
-            const pattern = patterns[detectedPattern] || {
-                name: 'الحارس القلق',
-                description: 'نظام [PROTECT] لديك يعمل بنمط "الإنذار المبكر".',
-                integrity: '31%',
-                mission: 'في الـ 24 ساعة القادمة، ابدأ شيئًا صغيرًا كنت تؤجله. ابدأ فقط. لا تكمله.',
-                monitor: 'عندما تشعر بالخوف من البدء، توقف 10 ثوانٍ.'
-            };
-
+            const p = patterns[detectedPattern] || { name: 'الحارس القلق', description: '...', integrity: '31%', mission: '...', monitor: '...' };
             document.getElementById('card-root-key').textContent = rootHabit;
-            document.getElementById('diagnosis-text').textContent = pattern.description;
-            document.getElementById('diagnosis-protocol').textContent =
-                'البروتوكول المقترح: DISRUPT Phase — نمط ' + pattern.name;
-            document.getElementById('mission-text').textContent = pattern.mission;
-            document.getElementById('integrity-score').textContent = pattern.integrity;
-            document.getElementById('friction-fill').style.width = parseInt(pattern.integrity) + '%';
-
-            localStorage.setItem('synapseX_pattern', pattern.name);
-            localStorage.setItem('synapseX_monitor_text', pattern.monitor);
+            document.getElementById('diagnosis-text').textContent = p.description;
+            document.getElementById('diagnosis-protocol').textContent = 'البروتوكول المقترح: DISRUPT Phase — نمط ' + p.name;
+            document.getElementById('mission-text').textContent = p.mission;
+            document.getElementById('integrity-score').textContent = p.integrity;
+            document.getElementById('friction-fill').style.width = parseInt(p.integrity) + '%';
+            localStorage.setItem('synapseX_pattern', p.name);
+            localStorage.setItem('synapseX_monitor_text', p.monitor);
         }
 
-        // ==================== SCREEN 5: TIMER ====================
         function startTimer() {
             updateTimerDisplay();
             timerInterval = setInterval(() => {
@@ -1238,21 +532,16 @@
                     document.getElementById('timer-box').style.borderColor = 'var(--accent-red)';
                     document.getElementById('expired-msg').style.display = 'block';
                     document.getElementById('btn-mission-complete').style.display = 'none';
-                    const requestBtn = document.getElementById('btn-request-protocol');
-                    if (requestBtn) requestBtn.style.display = 'inline-block';
+                    document.getElementById('btn-request-protocol').style.display = 'inline-block';
                 }
             }, 1000);
         }
 
         function updateTimerDisplay() {
-            const h = Math.floor(timerSeconds / 3600);
-            const m = Math.floor((timerSeconds % 3600) / 60);
-            const s = timerSeconds % 60;
-            document.getElementById('timer-text').textContent =
-                String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+            let h = Math.floor(timerSeconds / 3600), m = Math.floor((timerSeconds % 3600) / 60), s = timerSeconds % 60;
+            document.getElementById('timer-text').textContent = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
         }
 
-        // ==================== MISSION COMPLETED ====================
         function completeMission() {
             if (missionCompleted) return;
             missionCompleted = true;
@@ -1261,69 +550,47 @@
             document.getElementById('expired-msg').style.display = 'none';
             document.getElementById('btn-mission-complete').style.display = 'none';
             document.getElementById('completion-badge').style.display = 'inline-block';
-            const requestBtn = document.getElementById('btn-request-protocol');
-            if (requestBtn) requestBtn.style.display = 'inline-block';
+            document.getElementById('btn-request-protocol').style.display = 'inline-block';
             triggerHaptic('light');
             sendToWeb3Forms(operatorEmail || 'unknown', 'COMPLETED');
         }
 
-        // ==================== COMMITMENT CHECK ====================
-           function toggleEmailGate() {
-        const checkbox = document.getElementById('commit-check');
-        if (checkbox) {
-            document.getElementById('email-gate').style.display = checkbox.checked ? 'block' : 'none';
+        function toggleEmailGate() {
+            const checkbox = document.getElementById('commit-check');
+            if (checkbox) document.getElementById('email-gate').style.display = checkbox.checked ? 'block' : 'none';
         }
-    }
 
-        // ==================== EMAIL + WEB3FORMS + KIT ====================
         function validateAndUnlock() {
             const emailInput = document.getElementById('operator-email');
             const email = emailInput.value.trim();
             const warningEl = document.getElementById('email-warning');
             const successEl = document.getElementById('email-success');
             const btnUnlock = document.getElementById('btn-unlock');
-
-            warningEl.style.display = 'none';
-            successEl.style.display = 'none';
+            warningEl.style.display = 'none'; successEl.style.display = 'none';
 
             if (email.includes('@') && email.includes('.') && email.length > 5) {
                 operatorEmail = email;
-                operatorId = 'SX-' + Math.floor(Math.random() * 9000 + 1000) + '-' +
-                    String.fromCharCode(65 + Math.floor(Math.random() * 26)) +
-                    String.fromCharCode(65 + Math.floor(Math.random() * 26));
-
+                operatorId = 'SX-' + Math.floor(Math.random()*9000+1000) + '-' + String.fromCharCode(65+Math.floor(Math.random()*26)) + String.fromCharCode(65+Math.floor(Math.random()*26));
                 localStorage.setItem('synapseX_operator_email', operatorEmail);
                 localStorage.setItem('synapseX_operator_id', operatorId);
-                // Mark as completed to prevent retaking
                 localStorage.setItem('synapseX_test_completed', 'true');
-
                 document.getElementById('op-id-display').textContent = 'OP-ID: ' + operatorId;
-
                 successEl.style.display = 'block';
-                btnUnlock.disabled = true;
-                emailInput.disabled = true;
+                btnUnlock.disabled = true; emailInput.disabled = true;
                 triggerHaptic('light');
-
-                // Send to Web3Forms (your report)
                 sendToWeb3Forms(email, missionCompleted ? 'COMPLETED' : 'PENDING');
-                // Subscribe to Kit
-                subscribeToKit(email);
-
+                // subscribeToKit removed from here. Only called when [REQUEST NEXT PROTOCOL] is clicked.
                 setTimeout(() => {
                     document.getElementById('email-gate').style.display = 'none';
                     document.getElementById('commitment-gate').style.display = 'none';
                     document.getElementById('main-card').classList.add('unlocked');
                     document.getElementById('share-zone').style.display = 'block';
                 }, 1500);
-
             } else {
                 warningEl.style.display = 'block';
                 emailInput.style.borderBottomColor = 'var(--accent-red)';
-                triggerHaptic('warning');
-                emailInput.focus();
-                setTimeout(() => {
-                    emailInput.style.borderBottomColor = 'rgba(255,255,255,0.2)';
-                }, 2000);
+                triggerHaptic('warning'); emailInput.focus();
+                setTimeout(() => emailInput.style.borderBottomColor = 'rgba(255,255,255,0.2)', 2000);
             }
         }
 
@@ -1334,241 +601,112 @@
             formData.append('subject', 'SYNAPSE-X: New Operator Diagnostic Report');
             formData.append('from_name', 'SYNAPSE-X System');
             formData.append('email', email);
-            formData.append('message', `
-═══════════════════════════════
-SYNAPSE-X DIAGNOSTIC REPORT
-═══════════════════════════════
+            formData.append('message', `═══════════════════════════════\nSYNAPSE-X DIAGNOSTIC REPORT\n═══════════════════════════════\n\nOPERATOR ID: ${operatorId || 'PENDING'}\nEMAIL: ${email}\nROOT DISRUPTION KEY: ${rootHabit}\nPRIMARY CONFLICT: [PROTECT]\nPATTERN IDENTIFIED: ${pattern.name}\nSYSTEM INTEGRITY: ${pattern.integrity}\nTHREAT LEVEL: HIGH\nMISSION STATUS: ${status}\nFINAL PROBE ANSWER: ${openAnswer || 'Not provided'}\nTIMESTAMP: ${new Date().toISOString()}\n\n═══════════════════════════════\nEND OF REPORT`);
+            try { await fetch('https://api.web3forms.com/submit', { method: 'POST', body: formData }); } catch (e) {}
+        }
 
-OPERATOR ID: ${operatorId || 'PENDING'}
-EMAIL: ${email}
-ROOT DISRUPTION KEY: ${rootHabit}
-PRIMARY CONFLICT: [PROTECT]
-PATTERN IDENTIFIED: ${pattern.name}
-SYSTEM INTEGRITY: ${pattern.integrity}
-THREAT LEVEL: HIGH
-MISSION STATUS: ${status}
-FINAL PROBE ANSWER: ${openAnswer || 'Not provided'}
-TIMESTAMP: ${new Date().toISOString()}
-
-═══════════════════════════════
-END OF REPORT
-═══════════════════════════════
-            `);
-
+        async function subscribeToKit(email) {
             try {
-                await fetch('https://api.web3forms.com/submit', {
+                await fetch(`https://api.convertkit.com/v3/forms/${KIT_FORM_UID}/subscribe`, {
                     method: 'POST',
-                    body: formData
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email })
                 });
-            } catch (error) {
-                console.error('Web3Forms error:', error);
-            }
+            } catch (e) {}
         }
 
-                function subscribeToKit(email) {
-            var form = document.createElement('form');
-            form.action = 'https://app.convertkit.com/forms/' + KIT_FORM_UID + '/subscriptions';
-            form.method = 'POST';
-            form.style.display = 'none';
-
-            var emailInput = document.createElement('input');
-            emailInput.type = 'email';
-            emailInput.name = 'email_address';
-            emailInput.value = email;
-            form.appendChild(emailInput);
-
-            document.body.appendChild(form);
-            form.submit();
-        }
-        
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && document.getElementById('screen5').classList.contains('active')) {
-                const emailGate = document.getElementById('email-gate');
-                if (emailGate.style.display !== 'none' && emailGate.style.display !== '') {
-                    const emailInput = document.getElementById('operator-email');
-                    if (document.activeElement === emailInput) {
-                        validateAndUnlock();
-                    }
-                }
-            }
-        });
-
-        // ==================== SHARE ====================
-        function shareResult() {
-            const pattern = patterns[detectedPattern] || { name: 'PROTECT' };
-            const text =
-                `لقد أجريت الفحص العصبي في نظام SYNAPSE-X. تم اكتشاف نمط [${pattern.name}] في جدار الحماية [PROTECT]. ابدأ فحصك الآن.`;
-            const url = window.location.href;
-
-            if (navigator.share) {
-                navigator.share({
-                    title: 'SYNAPSE-X Diagnostic Result',
-                    text: text,
-                    url: url
-                }).catch(() => {});
-            } else {
-                navigator.clipboard.writeText(text + ' ' + url).then(() => {
-                    alert("تم نسخ النتيجة إلى الحافظة. يمكنك مشاركتها الآن.");
-                }).catch(() => {
-                    alert(text);
-                });
-            }
-        }
-
-        // ==================== SCREEN 6: THE VOID ====================
-        function startVoid() {
-            voidSeconds = 60;
-            const voidText = document.getElementById('void-text');
-            const voidCountdown = document.getElementById('void-countdown');
-
-            voidText.style.animation = 'none';
-            voidText.offsetHeight;
-            voidText.style.animation = 'voidFade 60s linear forwards';
-
-            voidCountdown.textContent = voidSeconds;
-
-            voidInterval = setInterval(() => {
-                voidSeconds--;
-                voidCountdown.textContent = voidSeconds;
-                if (voidSeconds <= 0) {
-                    clearInterval(voidInterval);
-                    document.getElementById('screen6').classList.remove('active');
-                    document.getElementById('screen6').style.display = 'none';
-                    nextScreen(7);
-                }
-            }, 1000);
-        }
-
-        // ==================== LIVE SYSTEM FEED ====================
-        function startSystemFeed() {
-            const feedMessages = [
-                "SCAN ACTIVE",
-                "PATTERN LOOP DETECTED",
-                "EMOTIONAL RESISTANCE ↑",
-                "MEMORY TRACE FLAGGED",
-                "SYSTEM INTEGRITY MONITORING",
-                "AWAITING NEXT CYCLE"
-            ];
-            let index = 0;
-            const feedEl = document.getElementById('system-feed');
-            if (!feedEl) return;
-            feedEl.textContent = feedMessages[0];
-            setInterval(() => {
-                index = (index + 1) % feedMessages.length;
-                feedEl.textContent = feedMessages[index];
-            }, 6000);
-        }
-
-        // ==================== DYNAMIC RETURN DETECTION ====================
-        function checkReturnDetection() {
-            const now = Date.now();
-            const lastVisit = localStorage.getItem('synapseX_last_visit');
-            if (!lastVisit) {
-                localStorage.setItem('synapseX_last_visit', now);
-                return;
-            }
-            const diff = now - parseInt(lastVisit);
-            let message = '';
-            if (diff < 10 * 60 * 1000) {
-                message = "عودة سريعة. هل حدث خطب؟";
-            } else if (diff < 4 * 60 * 60 * 1000) {
-                message = "عودة مبكرة غير معتادة.";
-            } else if (diff < 24 * 60 * 60 * 1000) {
-                message = "تم رصد انقطاع لمدة " + Math.floor(diff / (60 * 60 * 1000)) + " ساعة.";
-            } else {
-                message = "النظام فقد الاتصال بالمشغّل مؤقتًا.";
-            }
-            if (message) {
-                const toast = document.getElementById('toast');
-                toast.textContent = message;
-                toast.classList.add('show');
-                setTimeout(() => {
-                    toast.classList.remove('show');
-                }, 3000);
-            }
-            localStorage.setItem('synapseX_last_visit', now);
-        }
-
-        // ==================== REQUEST NEXT PROTOCOL (جديد) ====================
         function requestNextProtocol() {
             const emailInput = document.getElementById('operator-email');
             const email = emailInput ? emailInput.value.trim() : '';
-            const requestBtn = document.getElementById('btn-request-protocol');
-            const confirmMsg = document.getElementById('protocol-confirm-msg');
-            
             if (!email || !email.includes('@')) {
-                const emailGate = document.getElementById('email-gate');
-                if (emailGate) emailGate.style.display = 'block';
+                document.getElementById('email-gate').style.display = 'block';
                 alert("لتلقي البروتوكول التالي، يجب إدخال بريدك الإلكتروني أولاً.");
                 return;
             }
-            
-            if (requestBtn) {
-                requestBtn.disabled = true;
-                requestBtn.textContent = '✓ تم تسجيل الطلب';
-                requestBtn.style.borderColor = 'var(--accent-green)';
-                requestBtn.style.color = 'var(--accent-green)';
-            }
-            
-            if (confirmMsg) confirmMsg.style.display = 'block';
-            
-            if (!operatorEmail) {
-                operatorEmail = email;
-                localStorage.setItem('synapseX_operator_email', email);
-            }
+            const btn = document.getElementById('btn-request-protocol');
+            if (btn) { btn.disabled = true; btn.textContent = '✓ تم تسجيل الطلب'; btn.style.borderColor = 'var(--accent-green)'; btn.style.color = 'var(--accent-green)'; }
+            document.getElementById('protocol-confirm-msg').style.display = 'block';
+            if (!operatorEmail) { operatorEmail = email; localStorage.setItem('synapseX_operator_email', email); }
             sendToWeb3Forms(email, missionCompleted ? 'COMPLETED' : 'EXPIRED');
             subscribeToKit(email);
         }
 
-        // ==================== INIT ====================
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && document.getElementById('screen5').classList.contains('active')) {
+                const gate = document.getElementById('email-gate');
+                if (gate && gate.style.display !== 'none') {
+                    if (document.activeElement === document.getElementById('operator-email')) validateAndUnlock();
+                }
+            }
+        });
+
+        function shareResult() {
+            const p = patterns[detectedPattern] || { name: 'PROTECT' };
+            const text = `لقد أجريت الفحص العصبي في نظام SYNAPSE-X. تم اكتشاف نمط [${p.name}] في جدار الحماية [PROTECT]. ابدأ فحصك الآن.`;
+            const url = window.location.href;
+            if (navigator.share) navigator.share({ title: 'SYNAPSE-X', text, url }).catch(()=>{});
+            else { navigator.clipboard.writeText(text + ' ' + url).then(() => alert('تم النسخ')).catch(() => alert(text)); }
+        }
+
+        function startVoid() {
+            voidSeconds = 60;
+            document.getElementById('void-text').style.animation = 'voidFade 60s linear forwards';
+            document.getElementById('void-countdown').textContent = voidSeconds;
+            voidInterval = setInterval(() => {
+                voidSeconds--;
+                document.getElementById('void-countdown').textContent = voidSeconds;
+                if (voidSeconds <= 0) { clearInterval(voidInterval); document.getElementById('screen6').classList.remove('active'); document.getElementById('screen6').style.display = 'none'; nextScreen(7); }
+            }, 1000);
+        }
+
+        function startSystemFeed() {
+            const messages = ["SCAN ACTIVE", "PATTERN LOOP DETECTED", "EMOTIONAL RESISTANCE ↑", "MEMORY TRACE FLAGGED", "SYSTEM INTEGRITY MONITORING", "AWAITING NEXT CYCLE"];
+            let i = 0;
+            const el = document.getElementById('system-feed');
+            if (!el) return;
+            el.textContent = messages[0];
+            setInterval(() => { i = (i + 1) % messages.length; el.textContent = messages[i]; }, 6000);
+        }
+
+        function checkReturnDetection() {
+            const now = Date.now();
+            const last = localStorage.getItem('synapseX_last_visit');
+            if (!last) { localStorage.setItem('synapseX_last_visit', now); return; }
+            const diff = now - parseInt(last);
+            let msg = '';
+            if (diff < 10*60*1000) msg = "عودة سريعة. هل حدث خطب؟";
+            else if (diff < 4*60*60*1000) msg = "عودة مبكرة غير معتادة.";
+            else if (diff < 24*60*60*1000) msg = "تم رصد انقطاع لمدة " + Math.floor(diff/(60*60*1000)) + " ساعة.";
+            else msg = "النظام فقد الاتصال بالمشغّل مؤقتًا.";
+            if (msg) {
+                const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+                setTimeout(() => t.classList.remove('show'), 3000);
+            }
+            localStorage.setItem('synapseX_last_visit', now);
+        }
+
         window.onload = function() {
             checkReturnDetection();
-
-            // Check if user already completed the test
             const hasCompleted = localStorage.getItem('synapseX_test_completed');
             if (hasCompleted === 'true') {
-                // Redirect to monitoring screen with saved data
                 document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
                 document.getElementById('screen7').classList.add('active');
-
-                const savedEmail = localStorage.getItem('synapseX_operator_email');
-                const savedId = localStorage.getItem('synapseX_operator_id');
-                const savedHabit = localStorage.getItem('synapseX_root_habit');
-
-                if (savedEmail) operatorEmail = savedEmail;
-                if (savedId) operatorId = savedId;
-                if (savedHabit) rootHabit = savedHabit;
-
+                operatorEmail = localStorage.getItem('synapseX_operator_email') || '';
+                operatorId = localStorage.getItem('synapseX_operator_id') || '';
+                rootHabit = localStorage.getItem('synapseX_root_habit') || '';
                 document.getElementById('op-id-display-7').textContent = 'OP-ID: ' + (operatorId || 'PENDING');
                 document.getElementById('monitor-habit').textContent = rootHabit;
-                if (rootHabit) {
-                    document.getElementById('personal-echo').textContent = 'تم رصد محاولة هروب مرتبطة بـ [' +
-                        rootHabit + ']';
-                }
+                if (rootHabit) document.getElementById('personal-echo').textContent = 'تم رصد محاولة هروب مرتبطة بـ [' + rootHabit + ']';
                 startSystemFeed();
-                const requestBtn = document.getElementById('btn-request-protocol');
-                if (requestBtn && (missionCompleted || timerSeconds <= 0)) {
-                    requestBtn.style.display = 'inline-block';
-                }
+                if (missionCompleted || timerSeconds <= 0) document.getElementById('btn-request-protocol').style.display = 'inline-block';
                 return;
             }
-
             const savedEmail = localStorage.getItem('synapseX_operator_email');
-            const savedId = localStorage.getItem('synapseX_operator_id');
+            if (savedEmail) { operatorEmail = savedEmail; operatorId = localStorage.getItem('synapseX_operator_id') || ''; }
             const savedHabit = localStorage.getItem('synapseX_root_habit');
-
-            if (savedEmail) {
-                operatorEmail = savedEmail;
-                operatorId = savedId || '';
-            }
-            if (savedHabit) {
-                rootHabit = savedHabit;
-            }
-
+            if (savedHabit) rootHabit = savedHabit;
             if (!operatorId) {
-                operatorId = 'SX-' + Math.floor(Math.random() * 9000 + 1000) + '-' +
-                    String.fromCharCode(65 + Math.floor(Math.random() * 26)) +
-                    String.fromCharCode(65 + Math.floor(Math.random() * 26));
+                operatorId = 'SX-' + Math.floor(Math.random()*9000+1000) + '-' + String.fromCharCode(65+Math.floor(Math.random()*26)) + String.fromCharCode(65+Math.floor(Math.random()*26));
                 localStorage.setItem('synapseX_operator_id', operatorId);
             }
         };

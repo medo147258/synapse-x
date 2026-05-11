@@ -113,7 +113,6 @@
             .timer-display { font-size: 1rem; padding: 6px 12px; }
             .phase-item { padding: 10px 14px; }
             .btn { width: 100%; }
-            .checklist-item input[type="checkbox"] { width: 24px; height: 24px; }
         }
         @media (max-width: 360px) {
             .diagnostic-card, .monitoring-card { padding: 15px 10px; }
@@ -300,60 +299,21 @@
     </div>
 
     <script>
-        let currentQuestion = 0;
-        const totalQuestions = 9;
-        let operatorEmail = '';
-        let operatorId = '';
-        let rootHabit = '';
-        let openAnswer = '';
-        let timerInterval;
-        let timerSeconds = 14400;
-        let voidInterval;
-        let voidSeconds = 60;
-        let questionStartTime = 0;
-        let missionCompleted = false;
-        let detectedPattern = '';
+        // ==================== GLOBAL STATE ====================
+        let currentQuestion = 0, totalQuestions = 9, operatorEmail = '', operatorId = '', rootHabit = '', openAnswer = '';
+        let timerInterval, timerSeconds = 14400, voidInterval, voidSeconds = 60, questionStartTime = 0;
+        let missionCompleted = false, detectedPattern = '', web3formsSent = false;
 
-        const WEB3FORMS_KEY = '62d79786-1ef2-405e-a7d0-0246e81dd0c2';
-        const KIT_FORM_UID = '31e29ef833';
+        const WEB3FORMS_KEY = '62d79786-1ef2-405e-a7d0-0246e81dd0c2', KIT_FORM_UID = '31e29ef833';
 
         const patterns = {
-            'الخوف من الفشل': {
-                name: 'الحارس القلق',
-                description: 'أنت لا تفشل بسبب الضعف. أنت تتوقف لأن نظامك يبالغ في حمايتك من خطر غير موجود بعد.',
-                integrity: '31%',
-                mission: 'في الـ 24 ساعة القادمة، ابدأ شيئًا صغيرًا كنت تؤجله خوفًا من الفشل. ابدأ فقط. لا تكمله.',
-                monitor: 'عندما تشعر بالخوف من البدء، توقف 10 ثوانٍ. اسأل نفسك: هل الخطر حقيقي أم متخيل؟'
-            },
-            'التشتت والانشغال المفاجئ': {
-                name: 'المُشتت دائم الانشغال',
-                description: 'أنت لا تكمل شيئًا ليس لأنك مشغول. بل لأن نظامك يستخدم الانشغال كدرع ضد مواجهة ما هو مهم حقًا.',
-                integrity: '27%',
-                mission: 'في الـ 24 ساعة القادمة، أغلق كل شيء. اجلس 5 دقائق في صمت. لاحظ ما يظهر.',
-                monitor: 'عندما تشعر أنك مشغول فجأة، توقف 10 ثوانٍ. اسأل نفسك: من ماذا أهرب الآن؟'
-            },
-            'التردد والتفكير الزائد': {
-                name: 'صياد الفرص المتردد',
-                description: 'أنت لا تبحث عن الكمال. أنت تختبئ وراء التفكير كي لا تواجه احتمال الخطأ.',
-                integrity: '35%',
-                mission: 'في الـ 24 ساعة القادمة، اتخذ قرارًا واحدًا في أقل من 60 ثانية. لا تراجع. لا تتردد.',
-                monitor: 'عندما تجد نفسك تفكر أكثر من اللازم، توقف 10 ثوانٍ. اسأل نفسك: ما هو أسوأ ما يمكن أن يحدث؟'
-            },
-            'القلق من رأي الآخرين': {
-                name: 'الباحث عن القبول',
-                description: 'أنت لا تتكيف لأنك مرن. أنت تتكيف لأن نظامك يخشى أن تكون مرئيًا كما أنت.',
-                integrity: '29%',
-                mission: 'في الـ 24 ساعة القادمة، قل "لا" لشيء واحد. لا تبرر. لا تعتذر. فقط "لا".',
-                monitor: 'عندما تجد نفسك تقول نعم وأنت تريد لا، توقف 10 ثوانٍ. اسأل نفسك: من أنا بدون موافقتهم؟'
-            }
+            'الخوف من الفشل': { name: 'الحارس القلق', description: 'أنت لا تفشل بسبب الضعف. أنت تتوقف لأن نظامك يبالغ في حمايتك من خطر غير موجود بعد.', integrity: '31%', mission: 'في الـ 24 ساعة القادمة، ابدأ شيئًا صغيرًا كنت تؤجله خوفًا من الفشل. ابدأ فقط. لا تكمله.', monitor: 'عندما تشعر بالخوف من البدء، توقف 10 ثوانٍ. اسأل نفسك: هل الخطر حقيقي أم متخيل؟' },
+            'التشتت والانشغال المفاجئ': { name: 'المُشتت دائم الانشغال', description: 'أنت لا تكمل شيئًا ليس لأنك مشغول. بل لأن نظامك يستخدم الانشغال كدرع ضد مواجهة ما هو مهم حقًا.', integrity: '27%', mission: 'في الـ 24 ساعة القادمة، أغلق كل شيء. اجلس 5 دقائق في صمت. لاحظ ما يظهر.', monitor: 'عندما تشعر أنك مشغول فجأة، توقف 10 ثوانٍ. اسأل نفسك: من ماذا أهرب الآن؟' },
+            'التردد والتفكير الزائد': { name: 'صياد الفرص المتردد', description: 'أنت لا تبحث عن الكمال. أنت تختبئ وراء التفكير كي لا تواجه احتمال الخطأ.', integrity: '35%', mission: 'في الـ 24 ساعة القادمة، اتخذ قرارًا واحدًا في أقل من 60 ثانية. لا تراجع. لا تتردد.', monitor: 'عندما تجد نفسك تفكر أكثر من اللازم، توقف 10 ثوانٍ. اسأل نفسك: ما هو أسوأ ما يمكن أن يحدث؟' },
+            'القلق من رأي الآخرين': { name: 'الباحث عن القبول', description: 'أنت لا تتكيف لأنك مرن. أنت تتكيف لأن نظامك يخشى أن تكون مرئيًا كما أنت.', integrity: '29%', mission: 'في الـ 24 ساعة القادمة، قل "لا" لشيء واحد. لا تبرر. لا تعتذر. فقط "لا".', monitor: 'عندما تجد نفسك تقول نعم وأنت تريد لا، توقف 10 ثوانٍ. اسأل نفسك: من أنا بدون موافقتهم؟' }
         };
 
-        function triggerHaptic(type = 'light') {
-            if (navigator.vibrate) {
-                if (type === 'light') navigator.vibrate(20);
-                else if (type === 'warning') navigator.vibrate([50, 30, 50]);
-            }
-        }
+        function triggerHaptic(type = 'light') { if (navigator.vibrate) { if (type === 'light') navigator.vibrate(20); else if (type === 'warning') navigator.vibrate([50, 30, 50]); } }
 
         const questions = [
             { q: "[PROTECT] QUERY 01: عندما تحاول تغيير شيء مهم، ما هو أول ما يظهر؟", opts: ["الخوف من الفشل", "التشتت والانشغال المفاجئ", "التردد والتفكير الزائد", "القلق من رأي الآخرين"] },
@@ -366,183 +326,51 @@
             { q: "[PROTECT] QUERY 08: ما هو أكبر شيء تخلى عنه [PROTECT] ليحميك؟", opts: ["أحلامي", "علاقاتي", "صحتي", "لا أعرف"] }
         ];
 
-        const habitInput = document.getElementById('habit-input');
-        const btnEnterSystem = document.getElementById('btn-enter-system');
-        const habitHint = document.getElementById('habit-hint');
+        const habitInput = document.getElementById('habit-input'), btnEnterSystem = document.getElementById('btn-enter-system'), habitHint = document.getElementById('habit-hint');
+        habitInput.addEventListener('input', function() { if (this.value.trim().length >= 3) { btnEnterSystem.disabled = false; habitHint.style.display = 'block'; } else { btnEnterSystem.disabled = true; habitHint.style.display = 'none'; } });
+        habitInput.addEventListener('keydown', function(e) { if (e.key === 'Enter' && this.value.trim().length >= 3) startSystem(); });
 
-        habitInput.addEventListener('input', function() {
-            if (this.value.trim().length >= 3) { btnEnterSystem.disabled = false; habitHint.style.display = 'block'; }
-            else { btnEnterSystem.disabled = true; habitHint.style.display = 'none'; }
-        });
-
-        habitInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && this.value.trim().length >= 3) startSystem();
-        });
-
-        function startSystem() {
-            rootHabit = habitInput.value.trim();
-            if (rootHabit.length < 3) { alert("الرجاء إدخال عادة واضحة."); return; }
-            triggerHaptic('light');
-            localStorage.setItem('synapseX_root_habit', rootHabit);
-            nextScreen(1);
-            bootSequence();
-        }
+        function startSystem() { rootHabit = habitInput.value.trim(); if (rootHabit.length < 3) { alert("الرجاء إدخال عادة واضحة."); return; } triggerHaptic('light'); localStorage.setItem('synapseX_root_habit', rootHabit); nextScreen(1); bootSequence(); }
 
         const bootLines = ["INITIALIZING NEURAL INTERFACE...", "SYSTEM STATUS: ACTIVE", "LOADING SYNAPSE-X CORE MODULES...", "SCANNING FOR LEGACY BEHAVIORAL LOOPS...", "WARNING: UNPROCESSED PATTERNS DETECTED.", "ROOT KEY: REGISTERED.", "THIS SYSTEM DOES NOT DELIVER CONTENT.", "IT READS YOU FIRST."];
-        let lineIdx = 0; let charIdx = 0;
-        const typeTarget = document.getElementById('typewriter');
-
-        function bootSequence() {
-            lineIdx = 0; charIdx = 0; typeTarget.innerHTML = '';
-            document.getElementById('btn-start-scan').style.display = 'none';
-            type();
-        }
-
-        function type() {
-            if (lineIdx < bootLines.length) {
-                if (charIdx === 0) {
-                    const lineDiv = document.createElement('div');
-                    lineDiv.className = 'terminal-line'; lineDiv.id = 'line-' + lineIdx;
-                    typeTarget.appendChild(lineDiv);
-                }
-                const current = document.getElementById('line-' + lineIdx);
-                if (current && charIdx < bootLines[lineIdx].length) {
-                    current.textContent += bootLines[lineIdx].charAt(charIdx);
-                    charIdx++;
-                    setTimeout(type, 25);
-                } else {
-                    charIdx = 0; lineIdx++;
-                    setTimeout(type, 350);
-                }
-            } else {
-                document.getElementById('btn-start-scan').style.display = 'inline-block';
-            }
-        }
-
+        let lineIdx = 0, charIdx = 0; const typeTarget = document.getElementById('typewriter');
+        function bootSequence() { lineIdx = 0; charIdx = 0; typeTarget.innerHTML = ''; document.getElementById('btn-start-scan').style.display = 'none'; type(); }
+        function type() { if (lineIdx < bootLines.length) { if (charIdx === 0) { const d = document.createElement('div'); d.className = 'terminal-line'; d.id = 'line-' + lineIdx; typeTarget.appendChild(d); } const cur = document.getElementById('line-' + lineIdx); if (cur && charIdx < bootLines[lineIdx].length) { cur.textContent += bootLines[lineIdx].charAt(charIdx); charIdx++; setTimeout(type, 25); } else { charIdx = 0; lineIdx++; setTimeout(type, 350); } } else { document.getElementById('btn-start-scan').style.display = 'inline-block'; } }
         document.getElementById('btn-start-scan').onclick = () => { triggerHaptic('light'); nextScreen(2); };
 
-        function nextScreen(num) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById('screen' + num).classList.add('active');
-            if (num === 3) { currentQuestion = 0; loadQuestion(); }
-            if (num === 4) startDeepAnalysis();
-            if (num === 5) { populateDiagnosticCard(); startTimer(); }
-            if (num === 6) startVoid();
-            if (num === 7) {
-                document.getElementById('op-id-display-7').textContent = 'OP-ID: ' + (operatorId || 'PENDING');
-                document.getElementById('monitor-habit').textContent = rootHabit;
-                if (rootHabit) document.getElementById('personal-echo').textContent = 'تم رصد محاولة هروب مرتبطة بـ [' + rootHabit + ']';
-                localStorage.setItem('synapseX_monitoring_start', new Date().toISOString());
-                startSystemFeed();
-                if (timerSeconds <= 0 || missionCompleted) {
-                    document.getElementById('btn-request-protocol').style.display = 'inline-block';
-                }
-            }
-        }
+        function nextScreen(num) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById('screen' + num).classList.add('active'); if (num === 3) { currentQuestion = 0; loadQuestion(); } if (num === 4) startDeepAnalysis(); if (num === 5) { populateDiagnosticCard(); startTimer(); } if (num === 6) startVoid(); if (num === 7) { document.getElementById('op-id-display-7').textContent = 'OP-ID: ' + (operatorId || 'PENDING'); document.getElementById('monitor-habit').textContent = rootHabit; if (rootHabit) document.getElementById('personal-echo').textContent = 'تم رصد محاولة هروب مرتبطة بـ [' + rootHabit + ']'; localStorage.setItem('synapseX_monitoring_start', new Date().toISOString()); startSystemFeed(); if (timerSeconds <= 0 || missionCompleted) document.getElementById('btn-request-protocol').style.display = 'inline-block'; } }
 
-        function loadQuestion() {
-            document.getElementById('resistance-msg').style.opacity = '0';
-            questionStartTime = Date.now();
-            document.getElementById('open-question-zone').style.display = 'none';
-            document.getElementById('options-container').style.display = 'block';
-            document.getElementById('question-text').style.display = 'block';
+        function loadQuestion() { document.getElementById('resistance-msg').style.opacity = '0'; questionStartTime = Date.now(); document.getElementById('open-question-zone').style.display = 'none'; document.getElementById('options-container').style.display = 'block'; document.getElementById('question-text').style.display = 'block'; let dotsHtml = ''; for (let i = 0; i < totalQuestions; i++) { let cls = i < currentQuestion ? 'completed' : (i === currentQuestion ? 'active' : ''); dotsHtml += `<div class="dot ${cls}"></div>`; } document.getElementById('dots').innerHTML = dotsHtml; if (currentQuestion >= questions.length) { document.getElementById('question-text').style.display = 'none'; document.getElementById('options-container').style.display = 'none'; document.getElementById('open-question-zone').style.display = 'block'; const oi = document.getElementById('open-answer'), ob = document.getElementById('btn-submit-open'); oi.value = ''; ob.disabled = true; oi.oninput = () => { ob.disabled = oi.value.trim().length < 1; }; } else { document.getElementById('question-text').innerText = questions[currentQuestion].q; document.getElementById('options-container').innerHTML = questions[currentQuestion].opts.map(opt => `<div class="option-item" onclick="handleAnswer(this)">${opt}</div>`).join(''); } }
+        function handleAnswer(el) { const elapsed = (Date.now() - questionStartTime) / 1000; if (elapsed > 5) { const msg = document.getElementById('resistance-msg'); msg.style.opacity = '1'; msg.textContent = '[SYSTEM] تم رصد مقاومة في جدار الحماية [PROTECT]'; triggerHaptic('warning'); setTimeout(() => msg.style.opacity = '0', 3000); } if (currentQuestion === 0 && elapsed > 8) { const msg = document.getElementById('resistance-msg'); msg.textContent = '[ADAPTIVE] تردد في الاستجابة. جدار الحماية ينشط.'; msg.style.opacity = '1'; setTimeout(() => msg.style.opacity = '0', 3000); } if (currentQuestion === 0) detectedPattern = el.textContent.trim(); el.classList.add('selected'); triggerHaptic('light'); setTimeout(() => { currentQuestion++; if (currentQuestion <= questions.length) loadQuestion(); }, 250); }
+        function submitOpenAnswer() { openAnswer = document.getElementById('open-answer').value.trim(); if (!openAnswer) return; triggerHaptic('light'); currentQuestion++; nextScreen(4); }
 
-            let dotsHtml = '';
-            for (let i = 0; i < totalQuestions; i++) {
-                let cls = i < currentQuestion ? 'completed' : (i === currentQuestion ? 'active' : '');
-                dotsHtml += `<div class="dot ${cls}"></div>`;
-            }
-            document.getElementById('dots').innerHTML = dotsHtml;
+        function startDeepAnalysis() { const lines = ["Cross-referencing behavioral databases...", "Calculating System Friction Index...", "Identifying recurrent loop patterns...", "Mapping emotional triggers...", "Analyzing protection layer density...", "Diagnostic ready."]; const c = document.getElementById('analysis-lines'); c.innerHTML = ''; let i = 0; function s() { if (i < lines.length) { const d = document.createElement('div'); d.className = 'terminal-line'; d.textContent = lines[i]; d.style.opacity = '0'; c.appendChild(d); setTimeout(() => d.style.opacity = '1', 50); i++; setTimeout(s, 800); } else setTimeout(() => nextScreen(5), 1000); } s(); }
 
-            if (currentQuestion >= questions.length) {
-                document.getElementById('question-text').style.display = 'none';
-                document.getElementById('options-container').style.display = 'none';
-                document.getElementById('open-question-zone').style.display = 'block';
-                const openInput = document.getElementById('open-answer');
-                const openBtn = document.getElementById('btn-submit-open');
-                openInput.value = ''; openBtn.disabled = true;
-                openInput.oninput = () => { openBtn.disabled = openInput.value.trim().length < 1; };
-            } else {
-                document.getElementById('question-text').innerText = questions[currentQuestion].q;
-                document.getElementById('options-container').innerHTML = questions[currentQuestion].opts.map(opt => `<div class="option-item" onclick="handleAnswer(this)">${opt}</div>`).join('');
-            }
-        }
+        function populateDiagnosticCard() { const p = patterns[detectedPattern] || { name: 'الحارس القلق', description: '...', integrity: '31%', mission: '...', monitor: '...' }; document.getElementById('card-root-key').textContent = rootHabit; document.getElementById('diagnosis-text').textContent = p.description; document.getElementById('diagnosis-protocol').textContent = 'البروتوكول المقترح: DISRUPT Phase — نمط ' + p.name; document.getElementById('mission-text').textContent = p.mission; document.getElementById('integrity-score').textContent = p.integrity; document.getElementById('friction-fill').style.width = parseInt(p.integrity) + '%'; localStorage.setItem('synapseX_pattern', p.name); localStorage.setItem('synapseX_monitor_text', p.monitor); }
 
-        function handleAnswer(el) {
-            const elapsed = (Date.now() - questionStartTime) / 1000;
-            if (elapsed > 5) {
-                const msg = document.getElementById('resistance-msg');
-                msg.style.opacity = '1'; msg.textContent = '[SYSTEM] تم رصد مقاومة في جدار الحماية [PROTECT]';
-                triggerHaptic('warning');
-                setTimeout(() => msg.style.opacity = '0', 3000);
-            }
-            if (currentQuestion === 0 && elapsed > 8) {
-                const msg = document.getElementById('resistance-msg');
-                msg.textContent = '[ADAPTIVE] تردد في الاستجابة. جدار الحماية ينشط.';
-                msg.style.opacity = '1';
-                setTimeout(() => msg.style.opacity = '0', 3000);
-            }
-            if (currentQuestion === 0) detectedPattern = el.textContent.trim();
-            el.classList.add('selected');
-            triggerHaptic('light');
-            setTimeout(() => { currentQuestion++; if (currentQuestion <= questions.length) loadQuestion(); }, 250);
-        }
-
-        function submitOpenAnswer() {
-            openAnswer = document.getElementById('open-answer').value.trim();
-            if (!openAnswer) return;
-            triggerHaptic('light'); currentQuestion++; nextScreen(4);
-        }
-
-        function startDeepAnalysis() {
-            const lines = ["Cross-referencing behavioral databases...", "Calculating System Friction Index...", "Identifying recurrent loop patterns...", "Mapping emotional triggers...", "Analyzing protection layer density...", "Diagnostic ready."];
-            const container = document.getElementById('analysis-lines');
-            container.innerHTML = ''; let i = 0;
-            function show() {
-                if (i < lines.length) {
-                    const div = document.createElement('div'); div.className = 'terminal-line'; div.textContent = lines[i]; div.style.opacity = '0';
-                    container.appendChild(div); setTimeout(() => div.style.opacity = '1', 50);
-                    i++; setTimeout(show, 800);
-                } else setTimeout(() => nextScreen(5), 1000);
-            }
-            show();
-        }
-
-        function populateDiagnosticCard() {
-            const p = patterns[detectedPattern] || { name: 'الحارس القلق', description: '...', integrity: '31%', mission: '...', monitor: '...' };
-            document.getElementById('card-root-key').textContent = rootHabit;
-            document.getElementById('diagnosis-text').textContent = p.description;
-            document.getElementById('diagnosis-protocol').textContent = 'البروتوكول المقترح: DISRUPT Phase — نمط ' + p.name;
-            document.getElementById('mission-text').textContent = p.mission;
-            document.getElementById('integrity-score').textContent = p.integrity;
-            document.getElementById('friction-fill').style.width = parseInt(p.integrity) + '%';
-            localStorage.setItem('synapseX_pattern', p.name);
-            localStorage.setItem('synapseX_monitor_text', p.monitor);
-        }
-
-        function startTimer() {
-            updateTimerDisplay();
-            timerInterval = setInterval(() => {
-                timerSeconds--;
-                updateTimerDisplay();
-                if (timerSeconds <= 0) {
-                    clearInterval(timerInterval);
-                    document.getElementById('timer-text').textContent = 'EXPIRED';
-                    document.getElementById('timer-text').style.color = 'var(--accent-red)';
-                    document.getElementById('timer-box').style.borderColor = 'var(--accent-red)';
-                    document.getElementById('expired-msg').style.display = 'block';
-                    document.getElementById('btn-mission-complete').style.display = 'none';
-                    document.getElementById('btn-request-protocol').style.display = 'inline-block';
-                }
-            }, 1000);
-        }
-
-        function updateTimerDisplay() {
-            let h = Math.floor(timerSeconds / 3600), m = Math.floor((timerSeconds % 3600) / 60), s = timerSeconds % 60;
-            document.getElementById('timer-text').textContent = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
-        }
+        function startTimer() { updateTimerDisplay(); timerInterval = setInterval(() => { timerSeconds--; updateTimerDisplay(); if (timerSeconds <= 0) { clearInterval(timerInterval); document.getElementById('timer-text').textContent = 'EXPIRED'; document.getElementById('timer-text').style.color = 'var(--accent-red)'; document.getElementById('timer-box').style.borderColor = 'var(--accent-red)'; document.getElementById('expired-msg').style.display = 'block'; document.getElementById('btn-mission-complete').style.display = 'none'; document.getElementById('btn-request-protocol').style.display = 'inline-block'; } }, 1000); }
+        function updateTimerDisplay() { let h = Math.floor(timerSeconds / 3600), m = Math.floor((timerSeconds % 3600) / 60), s = timerSeconds % 60; document.getElementById('timer-text').textContent = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0'); }
 
         function completeMission() {
+            // إجبار المستخدم على إدخال البريد إذا لم يفعل
+            const emailInput = document.getElementById('operator-email');
+            const email = (emailInput?.value || '').trim();
+            if (!email || !email.includes('@')) {
+                // إظهار مربع الالتزام وحقل البريد
+                const emailGate = document.getElementById('email-gate');
+                const commitmentGate = document.getElementById('commitment-gate');
+                const checkbox = document.getElementById('commit-check');
+                if (commitmentGate) commitmentGate.style.display = 'block';
+                if (checkbox && !checkbox.checked) {
+                    checkbox.checked = true;
+                    toggleEmailGate(); // لإظهار حقل البريد
+                }
+                if (emailGate) emailGate.style.display = 'block';
+                alert("لتأكيد إكمال المهمة واستلام البروتوكولات، يجب إدخال بريدك الإلكتروني.");
+                if (emailInput) emailInput.focus();
+                return;
+            }
+            // إذا كان لدينا بريد، أكمل المهمة
             if (missionCompleted) return;
             missionCompleted = true;
             clearInterval(timerInterval);
@@ -552,163 +380,74 @@
             document.getElementById('completion-badge').style.display = 'inline-block';
             document.getElementById('btn-request-protocol').style.display = 'inline-block';
             triggerHaptic('light');
-            sendToWeb3Forms(operatorEmail || 'unknown', 'COMPLETED');
+            // إرسال تقرير واحد فقط
+            if (!web3formsSent) { web3formsSent = true; sendToWeb3Forms(operatorEmail || email, 'COMPLETED'); }
         }
 
-        function toggleEmailGate() {
-            const checkbox = document.getElementById('commit-check');
-            if (checkbox) document.getElementById('email-gate').style.display = checkbox.checked ? 'block' : 'none';
-        }
+        function toggleEmailGate() { const cb = document.getElementById('commit-check'); if (cb) document.getElementById('email-gate').style.display = cb.checked ? 'block' : 'none'; }
 
         function validateAndUnlock() {
-            const emailInput = document.getElementById('operator-email');
-            const email = emailInput.value.trim();
-            const warningEl = document.getElementById('email-warning');
-            const successEl = document.getElementById('email-success');
-            const btnUnlock = document.getElementById('btn-unlock');
+            const emailInput = document.getElementById('operator-email'), email = emailInput.value.trim();
+            const warningEl = document.getElementById('email-warning'), successEl = document.getElementById('email-success'), btnUnlock = document.getElementById('btn-unlock');
             warningEl.style.display = 'none'; successEl.style.display = 'none';
-
             if (email.includes('@') && email.includes('.') && email.length > 5) {
-                operatorEmail = email;
-                operatorId = 'SX-' + Math.floor(Math.random()*9000+1000) + '-' + String.fromCharCode(65+Math.floor(Math.random()*26)) + String.fromCharCode(65+Math.floor(Math.random()*26));
-                localStorage.setItem('synapseX_operator_email', operatorEmail);
-                localStorage.setItem('synapseX_operator_id', operatorId);
-                localStorage.setItem('synapseX_test_completed', 'true');
+                operatorEmail = email; operatorId = 'SX-' + Math.floor(Math.random()*9000+1000) + '-' + String.fromCharCode(65+Math.floor(Math.random()*26)) + String.fromCharCode(65+Math.floor(Math.random()*26));
+                localStorage.setItem('synapseX_operator_email', operatorEmail); localStorage.setItem('synapseX_operator_id', operatorId); localStorage.setItem('synapseX_test_completed', 'true');
                 document.getElementById('op-id-display').textContent = 'OP-ID: ' + operatorId;
-                successEl.style.display = 'block';
-                btnUnlock.disabled = true; emailInput.disabled = true;
-                triggerHaptic('light');
-                sendToWeb3Forms(email, missionCompleted ? 'COMPLETED' : 'PENDING');
-                // subscribeToKit removed from here. Only called when [REQUEST NEXT PROTOCOL] is clicked.
-                setTimeout(() => {
-                    document.getElementById('email-gate').style.display = 'none';
-                    document.getElementById('commitment-gate').style.display = 'none';
-                    document.getElementById('main-card').classList.add('unlocked');
-                    document.getElementById('share-zone').style.display = 'block';
-                }, 1500);
-            } else {
-                warningEl.style.display = 'block';
-                emailInput.style.borderBottomColor = 'var(--accent-red)';
-                triggerHaptic('warning'); emailInput.focus();
-                setTimeout(() => emailInput.style.borderBottomColor = 'rgba(255,255,255,0.2)', 2000);
-            }
+                successEl.style.display = 'block'; btnUnlock.disabled = true; emailInput.disabled = true; triggerHaptic('light');
+                // اشتراك فوري في Kit
+                subscribeToKit(email);
+                // إرسال تقرير واحد فقط
+                if (!web3formsSent) { web3formsSent = true; sendToWeb3Forms(email, missionCompleted ? 'COMPLETED' : 'PENDING'); }
+                setTimeout(() => { document.getElementById('email-gate').style.display = 'none'; document.getElementById('commitment-gate').style.display = 'none'; document.getElementById('main-card').classList.add('unlocked'); document.getElementById('share-zone').style.display = 'block'; }, 1500);
+            } else { warningEl.style.display = 'block'; emailInput.style.borderBottomColor = 'var(--accent-red)'; triggerHaptic('warning'); emailInput.focus(); setTimeout(() => emailInput.style.borderBottomColor = 'rgba(255,255,255,0.2)', 2000); }
         }
 
         async function sendToWeb3Forms(email, status) {
+            if (web3formsSent) return; web3formsSent = true;
             const pattern = patterns[detectedPattern] || { name: 'Unknown' };
-            const formData = new FormData();
-            formData.append('access_key', WEB3FORMS_KEY);
-            formData.append('subject', 'SYNAPSE-X: New Operator Diagnostic Report');
-            formData.append('from_name', 'SYNAPSE-X System');
-            formData.append('email', email);
-            formData.append('message', `═══════════════════════════════\nSYNAPSE-X DIAGNOSTIC REPORT\n═══════════════════════════════\n\nOPERATOR ID: ${operatorId || 'PENDING'}\nEMAIL: ${email}\nROOT DISRUPTION KEY: ${rootHabit}\nPRIMARY CONFLICT: [PROTECT]\nPATTERN IDENTIFIED: ${pattern.name}\nSYSTEM INTEGRITY: ${pattern.integrity}\nTHREAT LEVEL: HIGH\nMISSION STATUS: ${status}\nFINAL PROBE ANSWER: ${openAnswer || 'Not provided'}\nTIMESTAMP: ${new Date().toISOString()}\n\n═══════════════════════════════\nEND OF REPORT`);
+            const formData = new FormData(); formData.append('access_key', WEB3FORMS_KEY); formData.append('subject', 'SYNAPSE-X: New Operator Diagnostic Report'); formData.append('from_name', 'SYNAPSE-X System'); formData.append('email', email);
+            formData.append('message', `OPERATOR ID: ${operatorId || 'PENDING'}\nEMAIL: ${email}\nROOT DISRUPTION KEY: ${rootHabit}\nPRIMARY CONFLICT: [PROTECT]\nPATTERN IDENTIFIED: ${pattern.name}\nSYSTEM INTEGRITY: ${pattern.integrity}\nMISSION STATUS: ${status}`);
             try { await fetch('https://api.web3forms.com/submit', { method: 'POST', body: formData }); } catch (e) {}
         }
 
         async function subscribeToKit(email) {
-            try {
-                await fetch(`https://api.convertkit.com/v3/forms/${KIT_FORM_UID}/subscribe`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: email })
-                });
-            } catch (e) {}
+            try { await fetch(`https://api.convertkit.com/v3/forms/${KIT_FORM_UID}/subscribe`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) }); } catch (e) {}
         }
 
         function requestNextProtocol() {
-            const emailInput = document.getElementById('operator-email');
-            const email = emailInput ? emailInput.value.trim() : '';
-            if (!email || !email.includes('@')) {
-                document.getElementById('email-gate').style.display = 'block';
-                alert("لتلقي البروتوكول التالي، يجب إدخال بريدك الإلكتروني أولاً.");
-                return;
-            }
-            const btn = document.getElementById('btn-request-protocol');
-            if (btn) { btn.disabled = true; btn.textContent = '✓ تم تسجيل الطلب'; btn.style.borderColor = 'var(--accent-green)'; btn.style.color = 'var(--accent-green)'; }
+            const emailInput = document.getElementById('operator-email'), email = emailInput ? emailInput.value.trim() : '';
+            if (!email || !email.includes('@')) { document.getElementById('email-gate').style.display = 'block'; alert("لتلقي البروتوكول التالي، أدخل بريدك الإلكتروني أولاً."); return; }
+            const btn = document.getElementById('btn-request-protocol'); if (btn) { btn.disabled = true; btn.textContent = '✓ تم تسجيل الطلب'; btn.style.borderColor = 'var(--accent-green)'; btn.style.color = 'var(--accent-green)'; }
             document.getElementById('protocol-confirm-msg').style.display = 'block';
             if (!operatorEmail) { operatorEmail = email; localStorage.setItem('synapseX_operator_email', email); }
-            sendToWeb3Forms(email, missionCompleted ? 'COMPLETED' : 'EXPIRED');
+            // إرسال التقرير إن لم يسبق
+            if (!web3formsSent) { web3formsSent = true; sendToWeb3Forms(email, missionCompleted ? 'COMPLETED' : 'EXPIRED'); }
             subscribeToKit(email);
         }
 
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && document.getElementById('screen5').classList.contains('active')) {
-                const gate = document.getElementById('email-gate');
-                if (gate && gate.style.display !== 'none') {
-                    if (document.activeElement === document.getElementById('operator-email')) validateAndUnlock();
-                }
-            }
-        });
+        document.addEventListener('keydown', e => { if (e.key === 'Enter' && document.getElementById('screen5').classList.contains('active') && document.getElementById('email-gate').style.display !== 'none' && document.activeElement === document.getElementById('operator-email')) validateAndUnlock(); });
+        function shareResult() { const p = patterns[detectedPattern] || { name: 'PROTECT' }, text = `لقد أجريت الفحص العصبي في نظام SYNAPSE-X. تم اكتشاف نمط [${p.name}] في جدار الحماية [PROTECT]. ابدأ فحصك الآن.`, url = window.location.href; if (navigator.share) navigator.share({ title: 'SYNAPSE-X', text, url }).catch(()=>{}); else { navigator.clipboard.writeText(text + ' ' + url).then(() => alert('تم النسخ')).catch(() => alert(text)); } }
 
-        function shareResult() {
-            const p = patterns[detectedPattern] || { name: 'PROTECT' };
-            const text = `لقد أجريت الفحص العصبي في نظام SYNAPSE-X. تم اكتشاف نمط [${p.name}] في جدار الحماية [PROTECT]. ابدأ فحصك الآن.`;
-            const url = window.location.href;
-            if (navigator.share) navigator.share({ title: 'SYNAPSE-X', text, url }).catch(()=>{});
-            else { navigator.clipboard.writeText(text + ' ' + url).then(() => alert('تم النسخ')).catch(() => alert(text)); }
-        }
+        function startVoid() { voidSeconds = 60; document.getElementById('void-text').style.animation = 'voidFade 60s linear forwards'; document.getElementById('void-countdown').textContent = voidSeconds; voidInterval = setInterval(() => { voidSeconds--; document.getElementById('void-countdown').textContent = voidSeconds; if (voidSeconds <= 0) { clearInterval(voidInterval); document.getElementById('screen6').classList.remove('active'); document.getElementById('screen6').style.display = 'none'; nextScreen(7); } }, 1000); }
 
-        function startVoid() {
-            voidSeconds = 60;
-            document.getElementById('void-text').style.animation = 'voidFade 60s linear forwards';
-            document.getElementById('void-countdown').textContent = voidSeconds;
-            voidInterval = setInterval(() => {
-                voidSeconds--;
-                document.getElementById('void-countdown').textContent = voidSeconds;
-                if (voidSeconds <= 0) { clearInterval(voidInterval); document.getElementById('screen6').classList.remove('active'); document.getElementById('screen6').style.display = 'none'; nextScreen(7); }
-            }, 1000);
-        }
+        function startSystemFeed() { const messages = ["SCAN ACTIVE", "PATTERN LOOP DETECTED", "EMOTIONAL RESISTANCE ↑", "MEMORY TRACE FLAGGED", "SYSTEM INTEGRITY MONITORING", "AWAITING NEXT CYCLE"]; let i = 0; const el = document.getElementById('system-feed'); if (!el) return; el.textContent = messages[0]; setInterval(() => { i = (i + 1) % messages.length; el.textContent = messages[i]; }, 6000); }
 
-        function startSystemFeed() {
-            const messages = ["SCAN ACTIVE", "PATTERN LOOP DETECTED", "EMOTIONAL RESISTANCE ↑", "MEMORY TRACE FLAGGED", "SYSTEM INTEGRITY MONITORING", "AWAITING NEXT CYCLE"];
-            let i = 0;
-            const el = document.getElementById('system-feed');
-            if (!el) return;
-            el.textContent = messages[0];
-            setInterval(() => { i = (i + 1) % messages.length; el.textContent = messages[i]; }, 6000);
-        }
-
-        function checkReturnDetection() {
-            const now = Date.now();
-            const last = localStorage.getItem('synapseX_last_visit');
-            if (!last) { localStorage.setItem('synapseX_last_visit', now); return; }
-            const diff = now - parseInt(last);
-            let msg = '';
-            if (diff < 10*60*1000) msg = "عودة سريعة. هل حدث خطب؟";
-            else if (diff < 4*60*60*1000) msg = "عودة مبكرة غير معتادة.";
-            else if (diff < 24*60*60*1000) msg = "تم رصد انقطاع لمدة " + Math.floor(diff/(60*60*1000)) + " ساعة.";
-            else msg = "النظام فقد الاتصال بالمشغّل مؤقتًا.";
-            if (msg) {
-                const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
-                setTimeout(() => t.classList.remove('show'), 3000);
-            }
-            localStorage.setItem('synapseX_last_visit', now);
-        }
+        function checkReturnDetection() { const now = Date.now(), last = localStorage.getItem('synapseX_last_visit'); if (!last) { localStorage.setItem('synapseX_last_visit', now); return; } const diff = now - parseInt(last); let msg = ''; if (diff < 10*60*1000) msg = "عودة سريعة. هل حدث خطب؟"; else if (diff < 4*60*60*1000) msg = "عودة مبكرة غير معتادة."; else if (diff < 24*60*60*1000) msg = "تم رصد انقطاع لمدة " + Math.floor(diff/(60*60*1000)) + " ساعة."; else msg = "النظام فقد الاتصال بالمشغّل مؤقتًا."; if (msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); } localStorage.setItem('synapseX_last_visit', now); }
 
         window.onload = function() {
             checkReturnDetection();
-            const hasCompleted = localStorage.getItem('synapseX_test_completed');
-            if (hasCompleted === 'true') {
-                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-                document.getElementById('screen7').classList.add('active');
-                operatorEmail = localStorage.getItem('synapseX_operator_email') || '';
-                operatorId = localStorage.getItem('synapseX_operator_id') || '';
-                rootHabit = localStorage.getItem('synapseX_root_habit') || '';
-                document.getElementById('op-id-display-7').textContent = 'OP-ID: ' + (operatorId || 'PENDING');
-                document.getElementById('monitor-habit').textContent = rootHabit;
+            if (localStorage.getItem('synapseX_test_completed') === 'true') {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById('screen7').classList.add('active');
+                operatorEmail = localStorage.getItem('synapseX_operator_email') || ''; operatorId = localStorage.getItem('synapseX_operator_id') || ''; rootHabit = localStorage.getItem('synapseX_root_habit') || '';
+                document.getElementById('op-id-display-7').textContent = 'OP-ID: ' + (operatorId || 'PENDING'); document.getElementById('monitor-habit').textContent = rootHabit;
                 if (rootHabit) document.getElementById('personal-echo').textContent = 'تم رصد محاولة هروب مرتبطة بـ [' + rootHabit + ']';
-                startSystemFeed();
-                if (missionCompleted || timerSeconds <= 0) document.getElementById('btn-request-protocol').style.display = 'inline-block';
+                startSystemFeed(); if (missionCompleted || timerSeconds <= 0) document.getElementById('btn-request-protocol').style.display = 'inline-block';
                 return;
             }
-            const savedEmail = localStorage.getItem('synapseX_operator_email');
-            if (savedEmail) { operatorEmail = savedEmail; operatorId = localStorage.getItem('synapseX_operator_id') || ''; }
-            const savedHabit = localStorage.getItem('synapseX_root_habit');
-            if (savedHabit) rootHabit = savedHabit;
-            if (!operatorId) {
-                operatorId = 'SX-' + Math.floor(Math.random()*9000+1000) + '-' + String.fromCharCode(65+Math.floor(Math.random()*26)) + String.fromCharCode(65+Math.floor(Math.random()*26));
-                localStorage.setItem('synapseX_operator_id', operatorId);
-            }
+            const savedEmail = localStorage.getItem('synapseX_operator_email'); if (savedEmail) { operatorEmail = savedEmail; operatorId = localStorage.getItem('synapseX_operator_id') || ''; }
+            const savedHabit = localStorage.getItem('synapseX_root_habit'); if (savedHabit) rootHabit = savedHabit;
+            if (!operatorId) { operatorId = 'SX-' + Math.floor(Math.random()*9000+1000) + '-' + String.fromCharCode(65+Math.floor(Math.random()*26)) + String.fromCharCode(65+Math.floor(Math.random()*26)); localStorage.setItem('synapseX_operator_id', operatorId); }
         };
     </script>
 </body>
